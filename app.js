@@ -281,6 +281,12 @@ function openPay(pre){
   f.addEventListener('input',e=>{if(e.target.closest('#alloc'))payTotals()});
   f.addEventListener('change',e=>{if(e.target.closest('#alloc'))payTotals()});
   if(pre.penaltyOnly!=null)window._pay.penOnly=pre.penaltyOnly;
+  f.file.addEventListener('change',async()=>{const fl=f.file.files[0];if(!fl)return;
+    try{const info=await readReceiptFile(fl);
+      if(info.amount&&!(+f.amt.value))f.amt.value=info.amount;if(info.date)f.date.value=info.date;if(info.ref&&!f.ref.value)f.ref.value=info.ref;
+      if(info.from&&!f.payer.value)f.payer.value=info.from;if(info.mode&&MODES.includes(info.mode))f.mode.value=info.mode;
+      payRefresh(true);suggest();toast(info.amount?`Read AED ${money(info.amount)}${info.date?' · '+fd(info.date):''} – please check`:'Could not read this one – type the amount','ok')}
+    catch(e){toast('Could not read this file: '+e.message,'err')}});
   payRefresh(true);suggest();
 }
 function suggest(){

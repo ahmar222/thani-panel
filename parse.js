@@ -37,19 +37,22 @@ function parseEjari(raw){
 }
 
 function parseReceipt(raw){
-  const t=clean(raw).replace(/\n/g,' ').replace(/ +/g,' ');
+  let t=clean(raw).replace(/\n/g,' ').replace(/ +/g,' ');
+  t=t.replace(/(\d) ?, ?(?=\d{3}\b)/g,'$1,').replace(/(\d) \.(\d\d)\b/g,'$1.$2').replace(/(\d)\. (\d\d)\b/g,'$1.$2');
   const o={};
-  let m=/(?:Transfer amount|Transaction Amount|Total Amount|Amount)\s*:?\s*(?:AED\s*)?([\d,]+(?:\.\d{1,2})?)/i.exec(t);
+  let m=/Total Amount\s*:?\s*(?:AED\s*)?([\d,]+(?:\.\d{1,2})?)/i.exec(t)||/(?:Transfer amount|Transaction Amount|Amount)\s*:?\s*(?:AED\s*)?([\d,]+(?:\.\d{1,2})?)/i.exec(t)||/AED\s*([\d,]{3,}(?:\.\d{1,2})?)/i.exec(t);
   if(m)o.amount=num(m[1]);
-  m=/Date(?: and time)?\s*:?\s*(\d{2})\/(\d{2})\/(\d{2,4})/i.exec(t)||/(\d{2})\/(\d{2})\/(\d{4})/.exec(t);
+  m=/Date(?: and time)?\s*:?\s*(\d{2})\/(\d{2})\/(\d{2,4})/i.exec(t)||/(\d{2})\/(\d{2})\/(\d{4})/.exec(t)||/\b(\d{2})\/(\d{2})\/(\d{2})\b/.exec(t);
   if(m){const y=m[3].length==2?'20'+m[3]:m[3];o.date=`${y}-${m[2]}-${m[1]}`}
   m=/From account name (.+?) From account number/i.exec(t)||/From (.+?) Origin/i.exec(t)||/From Account\s*:?\s*(\S+)/i.exec(t);
   if(m)o.from=m[1].trim();
   m=/From account number\s*([*\dA-Z]+)/i.exec(t); if(m)o.fromAcct=m[1];
-  m=/\bTo (.+?) (?:Account|Bank)\b/.exec(t); if(m)o.to=m[1].trim();
+  m=/\bTo (.+?) (?:Account|Bank)\b/.exec(t)||/Transfer to (.+?) Transfer amount/i.exec(t); if(m)o.to=m[1].trim();
   m=/(AE\d{21})/.exec(t); if(m)o.iban=m[1];
-  m=/Reference(?: number| No\.?)?\s*:?\s*([A-Z0-9]{8,})/i.exec(t); if(m)o.ref=m[1];
+  m=/Reference(?: number| No\.?)?\s*:?\s*((?:[A-Z0-9]+\b ?){1,4})/.exec(t);
+  if(m){const tk=m[1].trim().split(' ');let r='';for(const k of tk){if((r+k).length>24)break;r+=k}if(r.length>=8)o.ref=r}
   m=/Purpose\s+(.+?)\s+Reference/i.exec(t); if(m)o.purpose=m[1].trim();
+  if(/Cash Deposit/i.test(t)){o.mode='cash deposit';o.cash=true;const br=/(?:^|\s)((?:[A-Z][\w]+ ){1,4}(?:ATM|CDM) ?\d*)/.exec(t);if(br)o.branch=br[1].trim()}
   o.direction=(o.from&&/THANI\s*ALTHANI|THANI RASHED/i.test(o.from))?'out':'in';
   o.ok=!!(o.amount&&o.date);
   return o;

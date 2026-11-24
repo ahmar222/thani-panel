@@ -43,16 +43,19 @@ async function ingestFiles(files){
   let made=0;
   for(const file of files){
     let info={};
-    if(file.type==='application/pdf'){try{info=Parse.parseReceipt(await pdfText(file))}catch(e){toast('Could not read '+file.name+' automatically – fill it in by hand','err')}}
+    try{info=await readReceiptFile(file)}catch(e){toast('Could not read '+file.name+' automatically – fill it in by hand','err')}
     if(info.ref&&D.entries.some(e=>e.ref===info.ref)){toast(`Skipped ${file.name}: reference ${info.ref} is already recorded`,'');continue}
     let meta;try{meta=await storeFile(file,'Receipt')}catch(e){toast(e.message,'err');continue}
-    const e={id:uid('e'),status:'pending',date:info.date||TODAY,amount:info.amount||0,ref:info.ref||'',mode:'bank transfer',file:meta,building:null};
+    const e={id:uid('e'),status:'pending',date:info.date||TODAY,amount:info.amount||0,ref:info.ref||'',mode:info.mode||'bank transfer',file:meta,building:null};
     if(info.direction==='out'){
       const nm=(info.to||'').toLowerCase(),p=D.partners.find(p=>(info.iban&&p.iban===info.iban)||nm.includes(p.short.toLowerCase())||(p.short==='Fatma'&&nm.includes('fatima')));
       if(p){Object.assign(e,{kind:'payout',cat:'payout',partnerId:p.id,desc:'transfer to '+p.short.toLowerCase()+' rashed',hint:'Outgoing transfer receipt – matches partner '+p.short});D.entries.push(e);made++;continue}
     }
-    Object.assign(e,{kind:'income',cat:'rent',payer:info.from||'',desc:(info.from?'From '+info.from:file.name)+(info.purpose?' – '+info.purpose:'')});
-    if(!info.ok)e.hint='Could not read amount/date from this file – open it and enter the details when you assign it.';
+    Object.assign(e,{kind:'income',cat:'rent',payer:info.from||'',desc:(info.from?'From '+info.from:info.cash?'Cash deposit'+(info.branch?' – '+info.branch:''):info.to?'Transfer to '+info.to:file.name)+(info.purpose?' – '+info.purpose:'')});
+    if(info.amount&&info.dateGuessed)e.hint='Date taken from the photo file – check it.';
+    if(info.cash)e.hint=(e.hint?e.hint+' ':'')+'Cash deposit – choose the flat it was for.';
+    if(info.to&&!info.from)e.hint=(e.hint?e.hint+' ':'')+'Paid to “'+info.to+'” – which flat is that?';
+    if(!info.amount)e.hint='Could not read amount/date from this file – open it and enter the details when you assign it.';
     D.entries.push(e);made++;
   }
   if(made){save();toast(made+' receipt(s) added to the waiting list','ok')}

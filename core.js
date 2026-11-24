@@ -138,6 +138,39 @@ async function pdfText(file){
   return out;
 }
 
+/* ---------- photo / screenshot reader (OCR, runs in the browser) ---------- */
+let _ocrP=null,_ocrW=null;
+function loadOcr(){
+  if(window.Tesseract)return Promise.resolve();
+  return _ocrP||(_ocrP=new Promise((res,rej)=>{
+    const base=window.OCR_BASE||'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/';
+    const s=document.createElement('script');s.src=base+'tesseract.min.js';s.onload=res;s.onerror=()=>{_ocrP=null;rej(new Error('Photo reader could not load (offline?)'))};document.head.appendChild(s);
+  }));
+}
+async function prepImage(file){
+  const bmp=await createImageBitmap(file),L=Math.max(bmp.width,bmp.height),sc=L>2400?2400/L:(L<1400?1400/L:1);
+  const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);
+  const x=c.getContext('2d');x.filter='grayscale(1) contrast(1.25)';x.drawImage(bmp,0,0,c.width,c.height);return c;
+}
+async function ocrImage(file){
+  await loadOcr();
+  if(!_ocrW){
+    const base=window.OCR_BASE||'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/';
+    _ocrW=Tesseract.createWorker('eng',1,{workerPath:base+'worker.min.js',corePath:window.OCR_CORE||'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/',langPath:window.OCR_LANG||'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/4.0.0_best_int',gzip:window.OCR_GZIP!==false});
+  }
+  const w=await _ocrW;const r=await w.recognize(await prepImage(file));return r.data.text;
+}
+/* any receipt file (PDF or photo) -> parsed fields */
+async function readReceiptFile(file){
+  let txt;
+  if(file.type==='application/pdf')txt=await pdfText(file);
+  else if(/^image\//.test(file.type)){toast('Reading the photo… (the first time takes ~20 seconds)');txt=await ocrImage(file)}
+  else return {};
+  const info=Parse.parseReceipt(txt);info.rawText=txt;
+  if(!info.date&&file.lastModified&&file.type!=='application/pdf'){info.date=new Date(file.lastModified+4*3600e3).toISOString().slice(0,10);info.dateGuessed=true}
+  return info;
+}
+
 /* ---------- calculations ---------- */
 const tenLabel=t=>`${t.building?bname(t.building)+' ':''}${t.units.length?t.units.join('+'):'(flat?)'} – ${t.tenant}`;
 const bname=id=>id==='both'?'Both buildings':(D.buildings.find(b=>b.id===id)?.name||'Unassigned');
