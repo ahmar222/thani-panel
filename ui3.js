@@ -27,7 +27,7 @@ function chqRow(i){
   return `<tr><td><input type="checkbox" data-sel="${i.tid}|${i.no}" ${F.cheques.sel[i.tid+'|'+i.no]?'checked':''}></td><td class="nw">${fd(i.due)}</td><td>${flatBadge(i.t)}</td><td><a href="#/tenant/${i.tid}">${esc(i.t.tenant)}</a></td><td>${i.no}</td>
   <td class="two">${cn||bk?`<b>${esc(cn||'—')}</b>${bk?`<span>${esc(bk)}</span>`:''}`:'<span class="muted">—</span>'}</td>
   <td class="num"><span class="muted xs">AED</span> ${money(chqFace(i))}${i.deposit?`<div class="muted xs">incl. ${money(i.deposit,0)} deposit</div>`:''}</td><td>${cs?pillOf(cs[0],{blue:'blue',amber:'amber',green:'green',red:'red'}[cs[1]]||'gray'):'<span class="muted">—</span>'}</td><td>${st}</td>
-  <td class="num nw">${i.done?'':`<button class="btn sm" data-act="payInst" data-t="${i.tid}" data-n="${i.no}">Receive</button> `}<button class="btn sm" data-act="chqEdit" data-t="${i.tid}" data-n="${i.no}">Edit</button></td></tr>`}
+  <td class="num nw">${i.done?'':`<button class="btn sm" data-act="payInst" data-t="${i.tid}" data-n="${i.no}">Receive</button> `}${od?`<button class="btn sm outline" data-act="penaltyNotice" data-t="${i.tid}" data-n="${i.no}" title="Create a late payment notice PDF">Notice</button> `:''}<button class="btn sm" data-act="chqEdit" data-t="${i.tid}" data-n="${i.no}">Edit</button></td></tr>`}
 window._draw.cheques=()=>{
   const base=allCheques(),L=chequeRows(),tot=L.reduce((s,i)=>s+chqFace(i),0),n=Object.values(F.cheques.sel).filter(Boolean).length;
   const x=$('[data-act=clrQ]');if(x)x.hidden=!F.cheques.q;
