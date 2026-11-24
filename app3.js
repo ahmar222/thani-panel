@@ -58,25 +58,25 @@ PAGES.dashboard=()=>{
   return `<div class="ph"><div><h2>Hello, Mr Thani</h2><div class="sub">${todayLong()}</div></div><div class="row"><button class="btn primary" data-act="addReceipt">+ Receipt</button><button class="btn" data-act="addExpense">+ Expense</button></div></div>
   ${stale?`<div class="note amber">Latest entry in the books is <b>${fd(C.lastEntry)}</b> – ${daysBetween(C.lastEntry,TODAY)} days ago. Add newer receipts so overdue and shares are accurate.</div>`:''}
   <div class="bento">
-   <div class="tile hero s7"><span class="glow"></span><div class="cap">Owed to partners today</div><div class="big-n"><small>AED</small>${cn(C.owedTotal)}</div>
+   <div class="tile hero s7"><span class="glow"></span>${i3("money-bag","hero-i bob")}<div class="cap">Owed to partners today</div><div class="big-n"><small>AED</small>${cn(C.owedTotal)}</div>
      <div class="cap" style="margin-top:6px">Bank balance ${aed(C.cash)} · reserve ${aed(S.reserve)} kept${v?(vok?' · <b style="color:#9ff0bd">✓ matches bank</b>':' · <b style="color:#ffc2bd">⚠ differs from statement</b>'):''}</div>
      <div style="margin-top:10px">${spark(ser.map(s=>s.cash),'#ff8a5c')}</div>
      <div class="row" style="margin-top:6px"><button class="btn primary" data-act="distribute">Distribute to partners</button><a class="btn ghost-w" href="#/partners">See shares</a></div></div>
-   <div class="tile s5"><h3>Rent this month</h3><div class="row" style="gap:18px;flex-wrap:nowrap">${ring(mr.due?mr.got/mr.due:0,mr.due&&mr.got>=mr.due?COL.occ:COL.in,{size:150,sub:'collected'})}<div><div class="mid-n"><small>AED</small>${cn(mr.got)}</div><div class="cap">of ${aed(mr.due)} due in ${MON[+TODAY.slice(5,7)-1]}</div>${odAmt?`<div class="chip red" style="margin-top:8px">${aed(odAmt)} overdue</div>`:'<div class="chip green" style="margin-top:8px">Nothing overdue</div>'}</div></div></div>
+   <div class="tile s5">${i3("calender","corner")}<h3>Rent this month</h3><div class="row" style="gap:18px;flex-wrap:nowrap">${ring(mr.due?mr.got/mr.due:0,mr.due&&mr.got>=mr.due?COL.occ:COL.in,{size:150,sub:'collected'})}<div><div class="mid-n"><small>AED</small>${cn(mr.got)}</div><div class="cap">of ${aed(mr.due)} due in ${MON[+TODAY.slice(5,7)-1]}</div>${odAmt?`<div class="chip red" style="margin-top:8px">${aed(odAmt)} overdue</div>`:'<div class="chip green" style="margin-top:8px">Nothing overdue</div>'}</div></div></div>
 
    <div class="tile s4"><h3>Flats</h3><div class="donutwrap">${donut([{v:cnt('occupied'),color:COL.occ,label:'Occupied'},{v:cnt('ending'),color:COL.end,label:'Ending soon'},{v:cnt('overdue'),color:COL.od,label:'Rent overdue'},{v:cnt('vacant'),color:COL.vac,label:'Vacant'}],{size:150,center:`${let_}/${states.length}`,sub:'let'})}
      <div class="legend"><span><i style="background:${COL.occ}"></i>${cnt('occupied')} occupied</span><span><i style="background:${COL.end}"></i>${cnt('ending')} ending soon</span><span><i style="background:${COL.od}"></i>${cnt('overdue')} overdue</span><span><i style="background:${COL.vac}"></i>${cnt('vacant')} vacant</span></div></div></div>
-   <div class="tile s8"><h3>Money in and out</h3><div class="cap">Last 12 months, excluding the opening balance</div>${bars12(ser)}</div>
+   <div class="tile s8">${i3("chart","corner")}<h3>Money in and out</h3><div class="cap">Last 12 months, excluding the opening balance</div>${bars12(ser)}</div>
 
-   <div class="tile s3 half ${C.overdue.length?'alert':''}"><div class="cap">Overdue cheques</div><div class="mid-n">${C.overdue.length}</div><div class="cap">${aed(odAmt)}</div></div>
-   <div class="tile s3 half ${C.pending.length?'warn':''}"><div class="cap">Receipts to assign</div><div class="mid-n">${C.pending.length}</div><div class="cap">${aed(C.pendingAmt)}</div>${C.pending.length?'<a class="btn sm" href="#/receipts">Assign</a>':''}</div>
-   <div class="tile s3 half"><div class="cap">Deposits held</div><div class="mid-n"><small>AED</small>${cn(C.depHeld)}</div><div class="cap">${S.holdDeposits?'kept out of shares':'counted in shares'}</div></div>
-   <div class="tile s3 half"><div class="cap">Cheques in hand</div><div class="mid-n"><small>AED</small>${cn(C.chqHeld)}</div><div class="cap">${C.chqHeldN} to come</div></div>
+   <div class="tile s3 half ${C.overdue.length?'alert':''}">${i3("clock","corner sm")}<div class="cap">Overdue cheques</div><div class="mid-n">${C.overdue.length}</div><div class="cap">${aed(odAmt)}</div></div>
+   <div class="tile s3 half ${C.pending.length?'warn':''}">${i3("file-text","corner sm")}<div class="cap">Receipts to assign</div><div class="mid-n">${C.pending.length}</div><div class="cap">${aed(C.pendingAmt)}</div>${C.pending.length?'<a class="btn sm" href="#/receipts">Assign</a>':''}</div>
+   <div class="tile s3 half">${i3("wallet","corner sm")}<div class="cap">Deposits held</div><div class="mid-n"><small>AED</small>${cn(C.depHeld)}</div><div class="cap">${S.holdDeposits?'kept out of shares':'counted in shares'}</div></div>
+   <div class="tile s3 half">${i3("money","corner sm")}<div class="cap">Cheques in hand</div><div class="mid-n"><small>AED</small>${cn(C.chqHeld)}</div><div class="cap">${C.chqHeldN} to come</div></div>
 
-   <div class="tile s6"><h3>Needs attention</h3>${A.length?`<ul class="alerts">${A.slice(0,8).map(a=>`<li class="${a.lvl}"><a href="${a.link}">${esc(a.txt)}</a></li>`).join('')}</ul>${A.length>8?`<p class="muted">+ ${A.length-8} more</p>`:''}`:empty('check','All clear')}</div>
+   <div class="tile s6">${i3("bell","corner")}<h3>Needs attention</h3>${A.length?`<ul class="alerts">${A.slice(0,8).map(a=>`<li class="${a.lvl}"><a href="${a.link}">${esc(a.txt)}</a></li>`).join('')}</ul>${A.length>8?`<p class="muted">+ ${A.length-8} more</p>`:''}`:empty('check','All clear')}</div>
    <div class="tile s6"><div class="row between"><h3>Each partner is owed</h3><a class="btn sm" href="#/partners">Details</a></div>${hbars(pb,{color:COL.in})}</div>
 
-   <div class="tile s12"><div class="row between"><h3>Your buildings</h3><a class="btn sm" href="#/tenants">Tenants</a></div><div class="cap">Tap a flat to receive rent, move someone in, or record a move-out.</div><div style="margin-top:14px">${D.buildings.map(b=>unitMap(b.id,states)).join('')}${mapLegend()}</div></div>
+   <div class="tile s12">${i3("key","corner")}<div class="row between"><h3>Your buildings</h3><a class="btn sm" href="#/tenants">Tenants</a></div><div class="cap">Tap a flat to receive rent, move someone in, or record a move-out.</div><div style="margin-top:14px">${D.buildings.map(b=>unitMap(b.id,states)).join('')}${mapLegend()}</div></div>
 
    <div class="tile s6"><h3>Where the money went</h3><div class="cap">Last 12 months · ${aed(ebT)}</div>${top.length?hbars(top,{color:COL.out}):empty('inbox','No expenses yet')}</div>
    <div class="tile s6"><div class="row between"><h3>Overdue cheques</h3><a class="btn sm" href="#/overdue">All &amp; penalties</a></div>${overdueTable(C.overdue.slice(0,6))}${arrAmt>0?`<div class="note red" style="margin-top:10px">Ex-tenants still owe <b>${aed(arrAmt)}</b> (${C.arrears.length} cheque(s))</div>`:''}</div>
@@ -104,7 +104,7 @@ PAGES.partners=()=>{
   const sh=C.partners.slice().sort((a,b)=>b.share-a.share).map(x=>({label:x.p.short,v:+(x.share*100).toFixed(2),tip:`${x.p.name}\n${x.area.toFixed(2)} m²`}));
   return `<div class="ph"><div><h2>Partners</h2><div class="sub">Who is owed what, live</div></div><div class="row"><button class="btn primary" data-act="distribute">Distribute / pay</button><button class="btn" data-act="copyShares">Copy summary</button></div></div>
   <div class="bento">
-   <div class="tile hero s6"><span class="glow"></span><div class="cap">Total due now</div><div class="big-n"><small>AED</small>${cn(C.owedTotal)}</div><div class="cap" style="margin-top:6px">Bank ${aed(C.cash)} − reserve ${aed(S.reserve)}</div></div>
+   <div class="tile hero s6"><span class="glow"></span>${i3("wallet","hero-i bob")}<div class="cap">Total due now</div><div class="big-n"><small>AED</small>${cn(C.owedTotal)}</div><div class="cap" style="margin-top:6px">Bank ${aed(C.cash)} − reserve ${aed(S.reserve)}</div></div>
    <div class="tile s3 half"><div class="cap">Pool to split</div><div class="mid-n"><small>AED</small>${cn(C.pool)}</div><div class="cap">income − expenses</div></div>
    <div class="tile s3 half"><div class="cap">Management fee ${S.mgmtPct}%</div><div class="mid-n"><small>AED</small>${cn(C.mg)}</div><div class="cap">to ${esc(mgr?.short||'manager')}</div></div>
    <div class="tile s5"><h3>Ownership share</h3>${hbars(sh,{color:COL.in,fmt:v=>v.toFixed(2)+'%'})}</div>

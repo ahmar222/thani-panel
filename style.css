@@ -195,3 +195,11 @@ textarea{width:100%;margin:8px 0;font-family:ui-monospace,monospace;font-size:14
 @media print{#side,.top,.btn,.filters,#tabbar{display:none!important}#app{display:block}body{background:#fff}.card,.tile{border:0}}
 .units>*,.floor>*,.tile,.bsec{min-width:0}.unit{overflow:hidden}
 @media(max-width:860px){.mo-inst{grid-template-columns:1fr}}
+
+.i3d{display:block;object-fit:contain;pointer-events:none;user-select:none}
+.tile .corner{position:absolute;right:14px;top:10px;width:64px;height:64px;opacity:.95}.tile .corner.sm{width:48px;height:48px;right:10px;top:8px}
+.tile.hero .hero-i{position:absolute;right:16px;top:12px;width:130px;height:130px;filter:drop-shadow(0 14px 18px rgba(0,0,0,.35))}
+.eimg{position:relative;display:grid;place-items:center}.i3d.big{width:120px;height:120px;position:absolute;inset:0;margin:auto;background:transparent}
+.eimg svg{width:120px;height:90px}.eimg{height:120px}
+@media(max-width:860px){.tile.hero .hero-i{width:84px;height:84px;top:10px;right:10px}.tile .corner{width:52px;height:52px}.tile .corner.sm{width:40px;height:40px}}
+.tile.hero>.cap{max-width:calc(100% - 150px)}@media(max-width:860px){.tile.hero>.cap{max-width:calc(100% - 96px)}}

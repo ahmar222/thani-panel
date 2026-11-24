@@ -73,7 +73,12 @@ const ILL={
   check:'<svg viewBox="0 0 120 90"><g class="bob"><circle cx="60" cy="42" r="30" fill="#dff3e6"/><path d="M45 43 l11 11 l21 -24" fill="none" stroke="#0b7a3b" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g><ellipse cx="60" cy="80" rx="30" ry="5" fill="#e6dfe5"/></svg>',
   building:'<svg viewBox="0 0 120 90"><g class="bob"><rect x="30" y="14" width="60" height="62" rx="6" fill="#f1e8ef" stroke="#5e2750" stroke-width="5"/><g fill="#e95420"><rect x="40" y="26" width="12" height="12" rx="2"/><rect x="68" y="26" width="12" height="12" rx="2"/><rect x="40" y="48" width="12" height="12" rx="2"/></g><rect x="66" y="50" width="14" height="26" rx="2" fill="#5e2750"/></g></svg>'
 };
-const empty=(kind,text)=>`<div class="empty">${ILL[kind]||''}<div>${text}</div></div>`;
+/* 3dicons (CC0) - loaded from their public CDN; falls back to the drawn SVG if it can't load */
+const I3_IK='https://ik.imagekit.io/3dicons/tr:w-256,h-256/v1/',I3_DO='https://3dicons.sgp1.cdn.digitaloceanspaces.com/v1/';
+const i3=(name,cls='',alt='')=>{const p=`iso/color/${name}-iso-color.png`;return `<img class="i3d ${cls}" src="${I3_IK}${p}" data-p="${p}" data-k="${cls}" alt="${alt}" loading="lazy" decoding="async" onerror="i3err(this)">`};
+function i3err(el){if(!el.dataset.f){el.dataset.f=1;el.src=I3_DO+el.dataset.p}else el.remove()}
+const I3K={keys:'key',inbox:'file-text',check:'tick',building:'key'};
+const empty=(kind,text)=>`<div class="empty"><div class="eimg">${ILL[kind]||''}${I3K[kind]?`<img class="i3d big bob" src="${I3_IK}iso/color/${I3K[kind]}-iso-color.png" alt="" loading="lazy" onload="this.parentNode.firstChild.style.display='none'" onerror="this.remove()">`:''}</div><div>${text}</div></div>`;
 
 /* phones: turn every table into stacked cards (CSS does the rest at <=860px) */
 function mobilize(root=document){
