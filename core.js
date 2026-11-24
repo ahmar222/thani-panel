@@ -148,7 +148,7 @@ function loadOcr(){
   }));
 }
 async function prepImage(file){
-  const bmp=await createImageBitmap(file),L=Math.max(bmp.width,bmp.height),sc=L>2400?2400/L:(L<1400?1400/L:1);
+  const bmp=await createImageBitmap(file),L=Math.max(bmp.width,bmp.height),sc=L>3000?3000/L:(L<2400?2400/L:1);
   const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);
   const x=c.getContext('2d');x.filter='grayscale(1) contrast(1.25)';x.drawImage(bmp,0,0,c.width,c.height);return c;
 }
@@ -159,6 +159,12 @@ async function ocrImage(file){
     _ocrW=Tesseract.createWorker('eng',1,{workerPath:base+'worker.min.js',corePath:window.OCR_CORE||'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/',langPath:window.OCR_LANG||'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/4.0.0_best_int',gzip:window.OCR_GZIP!==false});
   }
   const w=await _ocrW;const r=await w.recognize(await prepImage(file));return r.data.text;
+}
+/* text from a PDF or a photo/screenshot */
+async function docText(file){
+  if(file.type==='application/pdf')return pdfText(file);
+  if(/^image\//.test(file.type)){toast('Reading the photo… (first time takes ~20 seconds)');return ocrImage(file)}
+  throw new Error('Please use a PDF or an image');
 }
 /* any receipt file (PDF or photo) -> parsed fields */
 async function readReceiptFile(file){

@@ -89,7 +89,7 @@ actions.penReceive=d=>{const f=D.lateFees.find(f=>f.tenancyId===d.t&&f.no==d.n);
 
 /* ---------- tenants list ---------- */
 const tenStatusChip=t=>{if(t.status!=='active')return chip('Ended','');const d=daysBetween(TODAY,t.end);return d<0?chip('Expired','red'):d<=60?chip(`Ends in ${d}d`,'amber'):chip('Active','green')};
-PAGES.tenants=()=>`<div class="ph"><h2>Tenants</h2><div class="row"><button class="btn primary" data-act="newTenant">+ New tenant & cheques</button><label class="btn">📄 Read Ejari…<input type="file" accept="application/pdf" hidden data-act-change="ejari"></label></div></div>
+PAGES.tenants=()=>`<div class="ph"><h2>Tenants</h2><div class="row"><button class="btn primary" data-act="newTenant">+ New tenant & cheques</button><label class="btn">📄 Read Ejari…<input type="file" accept="application/pdf,image/*" hidden data-act-change="ejari"></label></div></div>
   <div class="filters"><select data-f="tenants.b">${bOpts(F.tenants.b,'All buildings')}</select><select data-f="tenants.st">${opt([['active','Active'],['ended','Ended'],['all','All']],F.tenants.st)}</select><input data-f="tenants.q" value="${esc(F.tenants.q)}" placeholder="Search name, flat, EID, Ejari no…"></div>
   <div id="tbl"></div><div id="vac"></div>`;
 window._draw.tenants=()=>{
@@ -111,7 +111,7 @@ PAGES.tenant=id=>{
   const kv=(k,v)=>v?`<div><span>${k}</span><b>${esc(v)}</b></div>`:'';
   const ents=D.entries.filter(en=>en.tenancyId===id).sort((a,b)=>a.date<b.date?1:-1);
   return `<div class="ph"><div><a href="#/tenants" class="sm">← Tenants</a><h2>${esc(t.units.join('+')||'(flat to assign)')} · ${esc(t.tenant)} ${tenStatusChip(t)}</h2><div class="muted">${esc(bname(t.building))} · ${esc(t.type||'')} · Contract ${fd(t.start)} → ${fd(t.end)}</div></div>
-   <div class="row"><button class="btn primary" data-act="payInst" data-t="${id}">Receive payment</button><button class="btn" data-act="editTenant" data-id="${id}">Edit / cheques</button><label class="btn">📄 Ejari<input type="file" accept="application/pdf" hidden data-act-change="ejari"></label><button class="btn" data-act="renewTenant" data-id="${id}">Renew</button>${t.status==='active'?`<button class="btn danger" data-act="openMoveOut" data-id="${id}">Move out…</button>`:`<button class="btn" data-act="editMoveOut" data-id="${id}">Move-out details</button><button class="btn" data-act="reopenTenant" data-id="${id}">Re-open</button>`}</div></div>
+   <div class="row"><button class="btn primary" data-act="payInst" data-t="${id}">Receive payment</button><button class="btn" data-act="editTenant" data-id="${id}">Edit / cheques</button><label class="btn">📄 Ejari<input type="file" accept="application/pdf,image/*" hidden data-act-change="ejari"></label><button class="btn" data-act="renewTenant" data-id="${id}">Renew</button>${t.status==='active'?`<button class="btn danger" data-act="openMoveOut" data-id="${id}">Move out…</button>`:`<button class="btn" data-act="editMoveOut" data-id="${id}">Move-out details</button><button class="btn" data-act="reopenTenant" data-id="${id}">Re-open</button>`}</div></div>
   ${t.needsUnit?`<div class="note red">Flat not assigned yet – press <b>Edit / cheques</b> and choose the building & flat.</div>`:''}
   ${t.notes?`<div class="note">${esc(t.notes)}</div>`:''}
   <div class="kpis"><div class="kpi"><div class="kl">Annual rent</div><div class="kv">${aed(t.annual)}</div><div class="ks">${x.insts.length} cheque(s)</div></div><div class="kpi"><div class="kl">Paid so far</div><div class="kv">${aed(x.paid)}</div></div><div class="kpi ${x.outstanding>0&&x.next?.openLate?'warn':''}"><div class="kl">Outstanding</div><div class="kv">${aed(x.outstanding)}</div></div>
@@ -172,7 +172,7 @@ function openTenantForm(t,ctx){
     <label class="chk"><input type="checkbox" id="g_dep" ${insts[0]?.deposit?'checked':''}> Deposit is inside the 1st cheque</label><button type="button" class="btn" data-act="genSched">Generate / reset rows</button><button type="button" class="btn" data-act="addRow">+ Add row</button></div>
     <div class="scroll"><table class="tbl sm" id="sched"><thead><tr><th>#</th><th>Cheque no.</th><th>Bank</th><th>Cheque date</th><th>Rent amt</th><th>Deposit incl.</th><th>Status</th><th></th></tr></thead><tbody>${insts.map(schedRow).join('')}</tbody></table></div>
     <div class="muted xs" id="schedSum"></div></div>
-   <div class="row between"><label class="btn sm">📄 Fill from Ejari…<input type="file" accept="application/pdf" hidden onchange="tfEjari(this)"></label><div class="row"><button type="button" class="btn" data-act="closeModal">Cancel</button><button class="btn primary">Save</button></div></div></form>`});
+   <div class="row between"><label class="btn sm">📄 Fill from Ejari…<input type="file" accept="application/pdf,image/*" hidden onchange="tfEjari(this)"></label><div class="row"><button type="button" class="btn" data-act="closeModal">Cancel</button><button class="btn primary">Save</button></div></div></form>`});
   schedSum();
 }
 function unitChecks(b,sel,tid){
@@ -197,12 +197,12 @@ actions.genSched=()=>{
   for(let k=0;k<n;k++){const amt=k===n-1?r2(annual-each*(n-1)):each;rows+=schedRow({no:k+1,due:addMonths(first,Math.round(step*k)),amount:amt,deposit:k===0?dep:0},k)}
   $('#sched tbody').innerHTML=rows;schedSum();
 };
-window.tfEjari=async inp=>{const file=inp.files[0];if(!file)return;try{const info=Parse.parseEjari(await pdfText(file));const f=$('#tform');
+window.tfEjari=async inp=>{const file=inp.files[0];if(!file)return;try{const info=Parse.parseEjari(await docText(file));const f=$('#tform');
   const set=(n,v)=>{if(v!=null&&v!==''&&f[n])f[n].value=v};
   set('tenant',info.tenant);set('start',info.start);set('end',info.end);set('annual',info.annual||info.amount);set('deposit',info.deposit);set('mobile',info.mobile);set('eid',info.eid);set('passport',info.passport);set('passportExpiry',info.passportExpiry);set('visaNo',info.visaNo);set('visaExpiry',info.visaExpiry);
   if(info.building){f.building.value=info.building;window._tf.t.building=info.building;$('#tfUnits').innerHTML=unitChecks(info.building,info.propertyNo?[info.propertyNo]:[],window._tf.t.id)}
   if(info.propertyNo&&info.subType)f.type.value=info.subType;
-  window._tf.ejari=info;window._tf.ejariFile=file;toast('Ejari read – check the details, then set the cheques','ok');schedSum()}catch(e){toast('Could not read this PDF: '+e.message,'err')}};
+  window._tf.ejari=info;window._tf.ejariFile=file;toast('Ejari read – check the details, then set the cheques','ok');schedSum()}catch(e){toast('Could not read this file: '+e.message,'err')}};
 forms.tenant=async f=>{
   const T=window._tf,old=T.t,form=$('#tform');
   const units=f.getAll('unit');const building=f.get('building')||null;
@@ -233,17 +233,17 @@ forms.tenant=async f=>{
 /* ---------- Ejari reader ---------- */
 async function readEjari(file){
   try{
-    toast('Reading Ejari…');const info=Parse.parseEjari(await pdfText(file));
-    if(!info.ok)return toast('That does not look like an Ejari certificate (could not find contract no./dates/tenant).','err');
+    toast('Reading Ejari…');const info=Parse.parseEjari(await docText(file));
+    if(!info.contractNo&&!info.tenant)return toast('That does not look like an Ejari certificate. For a photo, try a sharper, straight-on picture.','err');
     const match=D.tenancies.find(t=>t.status==='active'&&t.building===info.building&&t.units.includes(info.propertyNo));
     const same=D.tenancies.find(t=>t.ejari?.contractNo===info.contractNo);
     window._ej={info,file,match:same||match};
     const row=(k,v)=>v!=null&&v!==''?`<tr><td class="muted">${k}</td><td><b>${esc(v)}</b></td></tr>`:'';
-    modal({wide:1,title:'Ejari read',body:`<div class="note ok">Contract <b>${esc(info.contractNo)}</b> · ${esc(info.tenant)} · ${esc(info.buildingName||'')} flat <b>${esc(info.propertyNo||'?')}</b></div>
+    modal({wide:1,title:'Ejari read',body:`${file.type!=='application/pdf'?'<div class="note amber">Read from a photo – please double-check the numbers against the Ejari.</div>':''}${info.missing&&info.missing.length?`<div class="note red">Could not read: <b>${info.missing.join(', ')}</b>. Fill these in on the next screen.</div>`:''}<div class="note ok">Contract <b>${esc(info.contractNo)}</b> · ${esc(info.tenant)} · ${esc(info.buildingName||'')} flat <b>${esc(info.propertyNo||'?')}</b></div>
      <div class="grid2"><table class="tbl sm"><tbody>${row('Tenant',info.tenant)}${row('Nationality',info.nationality)}${row('Mobile',info.mobile)}${row('Emirates ID',info.eid)}${row('Passport',info.passport+' (exp '+fd(info.passportExpiry)+')')}${row('Visa',info.visaNo?info.visaNo+' (exp '+fd(info.visaExpiry)+')':'')}${row('Tenant no.',info.tenantNo)}</tbody></table>
      <table class="tbl sm"><tbody>${row('Contract period',fd(info.start)+' → '+fd(info.end))}${row('Annual rent',info.annual?aed(info.annual):'')}${row('Security deposit',info.deposit!=null?aed(info.deposit):'')}${row('Property',[info.propertyNo,info.propType,info.subType,info.usage,info.size&&info.size+' sq.m'].filter(Boolean).join(' · '))}${row('Plot / DM / Makani',[info.plot,info.dm,info.makani].filter(Boolean).join(' / '))}${row('DEWA premises',info.premises)}${row('Registered',fd(info.regDate))}${row('Ejari fees',info.fees&&aed(info.fees))}</tbody></table></div>
      <div class="row end wrap">${window._ej.match?`<button class="btn primary" data-act="ejApply">Update existing: ${esc(tenLabel(window._ej.match))}</button>`:''}<button class="btn ${window._ej.match?'':'primary'}" data-act="ejNew">Create new tenant from this Ejari</button><button class="btn" data-act="closeModal">Cancel</button></div>`});
-  }catch(e){toast('Could not read this PDF: '+e.message,'err')}
+  }catch(e){toast('Could not read this file: '+e.message,'err')}
 }
 actions.ejApply=async()=>{const {info,file,match:t}=window._ej;
   Object.assign(t,{start:info.start,end:info.end,annual:info.annual||t.annual,deposit:info.deposit??t.deposit,mobile:info.mobile||t.mobile,eid:info.eid||t.eid,passport:info.passport||t.passport,passportExpiry:info.passportExpiry||t.passportExpiry,visaNo:info.visaNo||t.visaNo,visaExpiry:info.visaExpiry||t.visaExpiry,nationality:info.nationality||t.nationality});

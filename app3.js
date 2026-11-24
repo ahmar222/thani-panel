@@ -90,7 +90,7 @@ const _tenOld=PAGES.tenants,_drawOld=window._draw.tenants;
 PAGES.tenants=()=>{
   const f=F.tenants;if(f.view==='list'){return _tenOld().replace('<div class="ph"><h2>Tenants</h2>',`<div class="ph"><div><h2>Tenants</h2><div class="sub">${segHtml()}</div></div>`)}
   const st=unitStates(),vac=st.filter(s=>!s.t).length;
-  return `<div class="ph"><div><h2>Tenants</h2><div class="sub">${segHtml()}</div></div><div class="row"><button class="btn primary" data-act="newTenant">+ New tenant</button><label class="btn">📄 Read Ejari<input type="file" accept="application/pdf" hidden data-act-change="ejari"></label></div></div>
+  return `<div class="ph"><div><h2>Tenants</h2><div class="sub">${segHtml()}</div></div><div class="row"><button class="btn primary" data-act="newTenant">+ New tenant</button><label class="btn">📄 Read Ejari<input type="file" accept="application/pdf,image/*" hidden data-act-change="ejari"></label></div></div>
    <div class="bento"><div class="tile s12"><h3>${vac?`${vac} vacant flat${vac>1?'s':''}`:'Every flat is let'}</h3><div class="cap">Tap a flat. Left already? Tap it, then <b>Moved out</b> – you can back-date it.</div><div style="margin-top:14px">${D.buildings.map(b=>unitMap(b.id,st)).join('')}${mapLegend()}</div></div></div>`;
 };
 const segHtml=()=>`<div class="seg"><button class="${F.tenants.view==='map'?'on':''}" data-act="tenView" data-v="map">Map</button><button class="${F.tenants.view==='list'?'on':''}" data-act="tenView" data-v="list">List</button></div>`;

@@ -12,27 +12,29 @@ function parseEjari(raw){
   const o={};
   o.contractNo=g(/Contract No:? (\d{10,})/);
   o.regDate=dmy(g(/Registration Date:? (\d{2}-\d{2}-\d{4})/));
-  o.owner=trim(g(/Owner Name ((?:[A-Z]+ ?)+)/));
+  o.owner=trim(g(/Owner Name ((?:[A-Z]+ ?)+)/));if(o.owner)o.owner=o.owner.replace(/\b(ALTHANI|ALMAZROUI|ALSUWAIDI|ALMUHAIRI)\b.*$/,'$1');
   o.start=dmy(g(/(?<!Grace )Start Date (\d{2}-\d{2}-\d{4})/));
   o.end=dmy(g(/(?<!Grace )End Date (\d{2}-\d{2}-\d{4})/));
   o.deposit=num(g(/Security Deposit ([\d,.]+) AED/));
   o.amount=num(g(/Contract Amount ([\d,.]+) AED/));
   o.annual=num(g(/(?<!Actual )Annual Amount ([\d,.]+) AED/));
-  const tn=/Tenant Name ((?:[A-Za-z.'-]+ ?)+)/.exec(t); o.tenant=tn?trim(tn[1].trim().replace(/\s+/g,' '),'Tenant No'):null;
+  const tn=/Tenant Name ((?:[A-Z][A-Z.'-]*\s?)+)/.exec(t)&&/Tenant Name ((?:[A-Z][A-Z.'-]*\s?)+)/.exec(t)[1].trim().length>2?/Tenant Name ((?:[A-Z][A-Z.'-]*\s?)+)/.exec(t):/Tenant Name ((?:[A-Za-z.'-]+ ?)+)/.exec(t); o.tenant=tn?trim(tn[1].trim().replace(/\s+/g,' '),'Tenant No'):null;
   o.tenantNo=g(/Tenant No (\d+)/);
-  const nat=/Tenant No \d+ Nationality ((?:[A-Za-z]+ ?)+)/.exec(t); o.nationality=nat?trim(nat[1].trim(),'Passport'):null;
-  let m=/Passport\/Expiry (\S+) \/ (\d{2}-\d{2}-\d{4})/.exec(t); if(m){o.passport=m[1];o.passportExpiry=dmy(m[2])}
+  const nat=/Tenant No \d+ Nationality ((?:[A-Za-z]+ ?)+)/.exec(t)||/Tenant No \d+\W+(?:\S{1,5}\W+){0,2}Nationality ([A-Z][a-z]+(?: [A-Z][a-z]+)?)/.exec(t); o.nationality=nat?trim(nat[1].trim(),'Passport'):null;
+  let m=/Passport\/Expiry (\S+) \/ (\d{2}-\d{2}-\d{4})/.exec(t); if(m){o.passport=m[1];o.passportExpiry=dmy(m[2])}else{m=/Passport\/Expiry\W*([A-Z0-9]{6,12}?)\s*[\/ ]\s*(\d{2})-?(\d{2})-?(\d{4})/.exec(t);if(m){o.passport=m[1];o.passportExpiry=`${m[4]}-${m[3]}-${m[2]}`}}
   o.eid=g(/(784-?\d{4}-?\d{7}-?\d)/);
   m=/Visa No & Expiry (\d+) \/ (\d{2}-\d{2}-\d{4})/.exec(t); if(m){o.visaNo=m[1];o.visaExpiry=dmy(m[2])}
-  let mob=g(/Mobile No (\+?\d{8,15})/); if(mob){mob=mob.replace(/^00/,'+'); o.mobile=mob}
+  let mob=g(/Mobile No (\+?\d{8,15})/); if(mob){mob=mob.replace(/^0{0,2}971/,'+971').replace(/^00/,'+'); o.mobile=mob}
   o.buildingName=trim(g(/Building Name\/No ((?:[A-Z0-9\-\/&.]+ ?)+)/));
-  o.plot=g(/Plot Number ([\d-]+)/); o.dm=g(/Affection Plan\) ([\d-]+)/); o.makani=g(/Makani No (\d+ ?\d*)/);
-  m=/(\S+) (Flat|Shop|Office|Villa|Warehouse|Room) (.+?) (Residential|Commercial|Industrial|Hospitality) ([\d.]+) \(Sq\.m\) (\d+)/.exec(t);
+  o.plot=g(/Plot Number ([\d-]+)/i); o.dm=g(/Affection Plan\) ([\d-]+)/); o.makani=g(/Makani No (\d+ ?\d*)/);
+  m=/(\S+) (Flat|Shop|Office|Villa|Warehouse|Room) (.+?) (Residential|Commercial|Industrial|Hospitality) ([\d.]+) \([A-Za-z]{0,2}\.?m\) (\d+)/.exec(t);
   if(m){o.propertyNo=m[1];o.propType=m[2];o.subType=m[3];o.usage=m[4];o.size=m[5];o.premises=m[6]}
   o.fees=num(g(/Total Fees ([\d,.]+) AED/));
   const b=(o.buildingName||'').toUpperCase();
   o.building=/MURR|MURAQ|MARQ/.test(b)?'muraqabat':/BARAH|BARAHA/.test(b)?'baraha':null;
-  o.ok=!!(o.contractNo&&o.start&&o.end&&o.tenant);
+  if(o.amount&&(!o.annual||o.annual<o.amount/3))o.annual=o.amount;
+  o.missing=[['contract no.',o.contractNo],['start date',o.start],['end date',o.end],['tenant',o.tenant]].filter(x=>!x[1]).map(x=>x[0]);
+  o.ok=!o.missing.length;
   return o;
 }
 
