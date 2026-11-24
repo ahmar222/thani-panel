@@ -146,7 +146,7 @@ forms.dist=f=>{
   const rows=CC.partners.map((x,i)=>({x,inc:f.get('inc'+i),amt:+f.get('amt'+i)||0})).filter(r=>r.inc&&r.amt>0);
   if(!rows.length)return toast('Nothing to record','err');const tot=rows.reduce((s,r)=>s+r.amt,0);
   confirmBox(`Record ${rows.length} payout(s) totalling <b>${aed(tot)}</b> dated ${fd(f.get('date'))}? Only do this once the transfers have been made.`,()=>{
-    rows.forEach(r=>D.entries.push({id:uid('e'),kind:'payout',cat:'payout',date:f.get('date'),amount:r.amt,partnerId:r.x.p.id,desc:'transfer to '+r.x.p.short.toLowerCase()+' rashed',mode:'bank transfer',status:'posted',building:null}));save();toast('Payouts recorded','ok')},'Record payouts');
+    rows.forEach(r=>D.entries.push({id:uid('e'),kind:'payout',cat:'payout',date:f.get('date'),amount:r.amt,partnerId:r.x.p.id,desc:'transfer to '+r.x.p.short.toLowerCase()+' rashed',mode:'bank transfer',status:'posted',building:null}));save();toast('Payouts recorded','ok');celebrate('Partners paid')},'Record payouts');
 };
 
 /* ---------- expenses, staff, contracts ---------- */

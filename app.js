@@ -5,8 +5,8 @@ const INC_CATS={rent:'Rent',deposit:'Security deposit',penalty:'Late penalty',ot
 const EXP_CATS={maintenance:'Maintenance / repairs',dewa:'DEWA (electricity / water)',lift:'Lift (AMC / repairs)',salary:'Watchman salary',staff:'Staff visa / other staff',waste:'Waste removal',cleaning:'Cleaning',insurance:'Insurance',legal:'Legal / govt / Ejari fees',deposit_refund:'Security deposit refund',other:'Other'};
 const catName=e=>e.kind==='payout'?'Partner payout':e.kind==='income'?(INC_CATS[e.cat]||e.cat):(EXP_CATS[e.cat]||e.cat);
 const MODES=['bank transfer','cash deposit','cheque','cash','card','other'];
-const CHQ_ST={held:['In hand','blue'],deposited:['Deposited','amber'],cleared:['Cleared','green'],bounced:['Bounced','red'],replaced:['Replaced','']};
-const ST_CHIP={paid:['Paid','green'],settled:['Settled','green'],partial:['Part paid','amber'],overdue:['Overdue','red'],soon:['Due soon','blue'],upcoming:['Upcoming','']};
+const CHQ_ST={returned:['Returned','dim'],held:['In hand','blue'],deposited:['Deposited','amber'],cleared:['Cleared','green'],bounced:['Bounced','red'],replaced:['Replaced','']};
+const ST_CHIP={cancelled:['Cancelled',''],paid:['Paid','green'],settled:['Settled','green'],partial:['Part paid','amber'],overdue:['Overdue','red'],soon:['Due soon','blue'],upcoming:['Upcoming','']};
 const chip=(t,c='')=>`<span class="chip ${c}">${esc(t)}</span>`;
 const opt=(arr,sel,withBlank)=>(withBlank?`<option value="">${withBlank}</option>`:'')+arr.map(a=>{const [v,l]=Array.isArray(a)?a:[a,a];return `<option value="${esc(v)}" ${String(v)===String(sel)?'selected':''}>${esc(l)}</option>`}).join('');
 const bOpts=(sel,blank)=>opt(D.buildings.map(b=>[b.id,b.name]),sel,blank);
@@ -27,7 +27,7 @@ window.refresh=function(){
   $$('#side a').forEach(a=>a.classList.toggle('on',a.dataset.r===(r==='tenant'?'tenants':r)));
   const pend=CC.pending.length;$('#inboxbadge').textContent=pend||'';$('#inboxbadge').hidden=!pend;
   if(window._draw&&window._draw[r])window._draw[r]();
-  window.scrollTo(0,y);setSync(SYNC.state,SYNC.msg);
+  window.scrollTo(0,y);setSync(SYNC.state,SYNC.msg);if(window.afterRender)afterRender(r);
 };
 window.addEventListener('hashchange',()=>{window.scrollTo(0,0);$('#side').classList.remove('open');refresh()});
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const f=actions[a.dataset.act];if(f){e.preventDefault();f(a.dataset,a,e)}});
@@ -111,7 +111,7 @@ PAGES.tenant=id=>{
   const kv=(k,v)=>v?`<div><span>${k}</span><b>${esc(v)}</b></div>`:'';
   const ents=D.entries.filter(en=>en.tenancyId===id).sort((a,b)=>a.date<b.date?1:-1);
   return `<div class="ph"><div><a href="#/tenants" class="sm">← Tenants</a><h2>${esc(t.units.join('+')||'(flat to assign)')} · ${esc(t.tenant)} ${tenStatusChip(t)}</h2><div class="muted">${esc(bname(t.building))} · ${esc(t.type||'')} · Contract ${fd(t.start)} → ${fd(t.end)}</div></div>
-   <div class="row"><button class="btn primary" data-act="payInst" data-t="${id}">Receive payment</button><button class="btn" data-act="editTenant" data-id="${id}">Edit / cheques</button><label class="btn">📄 Ejari<input type="file" accept="application/pdf" hidden data-act-change="ejari"></label><button class="btn" data-act="renewTenant" data-id="${id}">Renew</button>${t.status==='active'?`<button class="btn" data-act="endTenant" data-id="${id}">End tenancy</button>`:`<button class="btn" data-act="reopenTenant" data-id="${id}">Re-open</button>`}</div></div>
+   <div class="row"><button class="btn primary" data-act="payInst" data-t="${id}">Receive payment</button><button class="btn" data-act="editTenant" data-id="${id}">Edit / cheques</button><label class="btn">📄 Ejari<input type="file" accept="application/pdf" hidden data-act-change="ejari"></label><button class="btn" data-act="renewTenant" data-id="${id}">Renew</button>${t.status==='active'?`<button class="btn danger" data-act="openMoveOut" data-id="${id}">Move out…</button>`:`<button class="btn" data-act="editMoveOut" data-id="${id}">Move-out details</button><button class="btn" data-act="reopenTenant" data-id="${id}">Re-open</button>`}</div></div>
   ${t.needsUnit?`<div class="note red">Flat not assigned yet – press <b>Edit / cheques</b> and choose the building & flat.</div>`:''}
   ${t.notes?`<div class="note">${esc(t.notes)}</div>`:''}
   <div class="kpis"><div class="kpi"><div class="kl">Annual rent</div><div class="kv">${aed(t.annual)}</div><div class="ks">${x.insts.length} cheque(s)</div></div><div class="kpi"><div class="kl">Paid so far</div><div class="kv">${aed(x.paid)}</div></div><div class="kpi ${x.outstanding>0&&x.next?.openLate?'warn':''}"><div class="kl">Outstanding</div><div class="kv">${aed(x.outstanding)}</div></div>
@@ -131,7 +131,7 @@ actions.openFile=d=>openFile(d.p,d.n);
 window.attachTenFile=async(id,inp)=>{const f=inp.files[0];if(!f)return;try{toast('Uploading…');const m=await storeFile(f,/pdf/.test(f.type)?'Document':'Photo');const t=tenById(id);(t.files=t.files||[]).push(m);save();toast('Attached')}catch(e){toast(e.message,'err')}};
 actions.delTenFile=d=>confirmBox('Remove this file from the tenant? (The file stays in the cloud repo history.)',()=>{tenById(d.id).files.splice(+d.k,1);save()},'Remove');
 actions.endTenant=d=>{const t=tenById(d.id),x=CC.ten[d.id];confirmBox(`End tenancy of <b>${esc(t.tenant)}</b>?${x.depHeld>0?` Security deposit held: <b>${aed(x.depHeld)}</b> – record the refund separately as an expense (category: Security deposit refund) when you pay it back.`:''}`,()=>{t.status='ended';t.endedOn=TODAY;save()},'End tenancy')};
-actions.reopenTenant=d=>{tenById(d.id).status='active';save()};
+
 actions.renewTenant=d=>{const t=tenById(d.id);const n=JSON.parse(JSON.stringify(t));delete n.id;delete n.ejari;delete n.files;n.start=addDays(t.end,1);n.end=addMonths(n.start,12);n.installments=[];openTenantForm(n,{renewOf:t.id})};
 
 /* chq status editor */
@@ -212,6 +212,7 @@ forms.tenant=async f=>{
   const insts=rows.map((tr,k)=>{const g=n=>$(`[name=${n}]`,tr).value;const p=prev[k]||{};
     const dep=+g('s_dep')||0,amt=+g('s_amt')||0;const o={no:k+1,due:g('s_due'),amount:amt};if(dep)o.deposit=dep;
     if(p.settled){o.settled=true;o.settledNote=p.settledNote}
+    if(p.cancelled){o.cancelled=true;if(p.off)o.off=true}
     const cno=g('s_no').trim(),bank=g('s_bank').trim();
     if(cno||bank||p.cheque){o.cheque={...(p.cheque||{}),no:cno,bank,status:g('s_st'),amountFace:r2(amt+dep)}}
     return o});
@@ -257,7 +258,7 @@ actions.ejNew=()=>{const {info,file}=window._ej;closeModal();
 /* ---------- receive payment / receipt ---------- */
 function openPay(pre){
   const C=CC;window._pay={pre};
-  const tenOpts=b=>D.tenancies.filter(t=>t.status==='active'&&(!b||t.building===b||!t.building)).sort((a,c)=>(a.units[0]||'').localeCompare(c.units[0]||'',undefined,{numeric:true})).map(t=>[t.id,(t.units.join('+')||'?')+' – '+t.tenant]);
+  const tenOpts=b=>D.tenancies.filter(t=>(t.status==='active'||t.id===pre.tenancyId||CC.ten[t.id]?.insts.some(i=>!i.done&&!i.cancelled))&&(!b||t.building===b||!t.building)).sort((a,c)=>(a.units[0]||'').localeCompare(c.units[0]||'',undefined,{numeric:true})).map(t=>[t.id,(t.units.join('+')||'?')+' – '+t.tenant+(t.status==='active'?'':' (moved out)')]);
   const t0=pre.tenancyId?tenById(pre.tenancyId):null;const b0=t0?.building||pre.building||'';
   const pe=pre.pendingId?D.entries.find(e=>e.id===pre.pendingId):null;
   modal({wide:1,title:pre.penaltyOnly?'Receive late penalty':pe?'Assign receipt to a flat':'Add receipt / payment',body:`<form data-form="pay">

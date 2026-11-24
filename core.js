@@ -147,7 +147,7 @@ function calc(){
   const S=D.settings,tol=S.tol??10,grace=S.graceDays||0,T=TODAY;
   const posted=D.entries.filter(e=>e.status!=='pending');
   const ten={};
-  D.tenancies.forEach(t=>{ten[t.id]={t,insts:t.installments.map(i=>({...i,paid:i.settled?i.amount:0,allocs:[],pen:0,tid:t.id,t}))}});
+  D.tenancies.forEach(t=>{ten[t.id]={t,insts:t.installments.map(i=>({...i,paid:i.settled&&!i.cancelled?i.amount:0,allocs:[],pen:0,tid:t.id,t}))}});
   /* rent allocation: explicit cheque no. first, otherwise oldest unpaid first */
   const rents=posted.filter(e=>e.kind==='income'&&e.cat==='rent'&&e.tenancyId&&ten[e.tenancyId]).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
   for(const e of rents){
@@ -155,33 +155,34 @@ function calc(){
     const ex=e.instNo&&L.find(i=>i.no==e.instNo);
     if(ex){ex.paid=r2(ex.paid+left);ex.allocs.push({date:e.date,amt:left});continue}
     for(const i of L){
-      if(left<=0.004)break;if(i.settled)continue;
+      if(left<=0.004)break;if(i.settled||i.cancelled)continue;
       const room=r2(i.amount-i.paid);if(room<=tol&&room<left)continue;if(room<=0)continue;
       const a=Math.min(left,room);i.paid=r2(i.paid+a);i.allocs.push({date:e.date,amt:a});left=r2(left-a);
     }
-    if(left>0.004&&L.length){const i=L[L.length-1];i.paid=r2(i.paid+left);i.allocs.push({date:e.date,amt:left})}
+    if(left>0.004&&L.length){const i=L.filter(z=>!z.cancelled).pop()||L[L.length-1];i.paid=r2(i.paid+left);i.allocs.push({date:e.date,amt:left})}
   }
   for(const e of posted.filter(e=>e.kind==='income'&&e.cat==='penalty'&&e.tenancyId&&ten[e.tenancyId])){
     const i=ten[e.tenancyId].insts.find(x=>x.no==e.instNo);if(i)i.pen=r2(i.pen+e.amount);
   }
-  const overdue=[],soon=[],lateNoDecision=[];let chqHeld=0,chqHeldN=0;
+  const overdue=[],soon=[],lateNoDecision=[];let chqHeld=0,chqHeldN=0;const arrears=[];
   for(const k in ten){
     const x=ten[k];x.depPaid=0;x.depRefund=0;
     posted.forEach(e=>{if(e.tenancyId===k){if(e.kind==='income'&&e.cat==='deposit')x.depPaid=r2(x.depPaid+e.amount);if(e.kind==='expense'&&e.cat==='deposit_refund')x.depRefund=r2(x.depRefund+e.amount)}});
-    x.depHeld=r2(x.depPaid-x.depRefund);x.depDue=x.t.deposit??null;
+    x.depHeld=r2(x.depPaid-x.depRefund-(x.t.moveOut?.deduction||0));x.depDue=x.t.deposit??null;
     x.depShort=x.depDue==null?0:Math.max(0,r2(x.depDue-x.depPaid));
     if(x.depShort<=tol)x.depShort=0;
     x.paid=0;x.total=0;x.outstanding=0;x.next=null;
     for(const i of x.insts){
-      i.bal=r2(i.amount-i.paid);i.done=!!i.settled||i.bal<=tol;
+      i.bal=r2(i.amount-i.paid);i.done=!!i.settled||!!i.cancelled||i.bal<=tol;
       let cum=0;i.paidOn=null;
       if(i.settled)i.paidOn=null;else for(const a of i.allocs.sort((p,q)=>p.date<q.date?-1:1)){cum+=a.amt;if(cum>=i.amount-tol){i.paidOn=a.date;break}}
       i.lateDays=(!i.settled&&i.done&&i.paidOn&&daysBetween(i.due,i.paidOn)>grace)?daysBetween(i.due,i.paidOn):0;
       i.openLate=(!i.done&&daysBetween(i.due,T)>grace)?daysBetween(i.due,T):0;
-      i.status=i.settled?'settled':i.done?'paid':i.paid>0?(i.openLate?'overdue':'partial'):i.openLate?'overdue':daysBetween(T,i.due)<=30?'soon':'upcoming';
+      i.status=i.cancelled?'cancelled':i.settled?'settled':i.done?'paid':i.paid>0?(i.openLate?'overdue':'partial'):i.openLate?'overdue':daysBetween(T,i.due)<=30?'soon':'upcoming';
       const fee=D.lateFees.find(f=>f.tenancyId===k&&f.no==i.no);i.fee=fee||null;
       i.needsFee=!fee&&(i.lateDays>0&&i.paidOn>=S.penaltyFrom);
-      x.total=r2(x.total+i.amount);x.paid=r2(x.paid+Math.min(i.paid,i.amount));
+      if(!i.cancelled){x.total=r2(x.total+i.amount);x.paid=r2(x.paid+Math.min(i.paid,i.amount))}
+      if(x.t.status!=='active'&&!i.done&&!i.cancelled&&!i.written){arrears.push(i)}
       if(x.t.status==='active'){
         if(!i.done){x.outstanding=r2(x.outstanding+i.bal);if(i.openLate)overdue.push(i);else if(i.status==='soon')soon.push(i);if(!x.next)x.next=i}
         if(i.needsFee)lateNoDecision.push(i);
@@ -196,7 +197,7 @@ function calc(){
   const depIn=sum(inc.filter(e=>e.cat==='deposit')),depOut=sum(exp.filter(e=>e.cat==='deposit_refund'));
   const cash=r2(S.openingCash+sum(inc.filter(e=>e.cat!=='carry'))-sum(exp)-sum(pay));
   let pool=S.holdDeposits?sum(inc.filter(e=>e.cat!=='deposit'))-sum(exp.filter(e=>e.cat!=='deposit_refund')):sum(inc)-sum(exp);
-  pool=r2(pool);
+  pool=r2(pool+(S.holdDeposits?retained:0));
   const mg=pool>0?r2(pool*S.mgmtPct/100):0,dist=r2(pool-mg-S.reserve);
   const totArea=D.partners.reduce((s,p)=>s+(+p.areaM||0)+(+p.areaB||0),0);
   const partners=D.partners.map(p=>{
@@ -205,11 +206,30 @@ function calc(){
     const paid=sum(pay.filter(e=>e.partnerId===p.id&&!e.prior));
     return {p,area,share,entl,share_amt:r2(dist*share),fee:p.manager?mg:0,paid,owed:r2(entl-paid)};
   });
+  const retained=r2(D.tenancies.reduce((s,t)=>s+(t.moveOut?.deduction||0),0));
   const pending=D.entries.filter(e=>e.status==='pending');
   const lastEntry=posted.reduce((m,e)=>e.date>m&&e.cat!=='carry'?e.date:m,'');
-  return {ten,overdue,soon,lateNoDecision,chqHeld,chqHeldN,cash,pool,mg,dist,partners,totArea,depHeld:r2(depIn-depOut),pending,
+  return {ten,overdue,soon,lateNoDecision,chqHeld,chqHeldN,cash,pool,mg,dist,partners,totArea,depHeld:r2(depIn-depOut-retained),retained,arrears,pending,
     pendingAmt:sum(pending.filter(e=>e.kind==='income')),owedTotal:r2(partners.reduce((s,x)=>s+x.owed,0)),lastEntry,
     income:sum(inc),expenses:sum(exp)};
+}
+function unitStates(C){
+  C=C||CC;const out=[];
+  D.units.forEach(u=>{
+    const act=D.tenancies.filter(t=>t.status==='active'&&t.building===u.building&&t.units.includes(u.no));
+    const t=act.sort((a,b)=>a.start<b.start?1:-1)[0];
+    const past=D.tenancies.filter(t=>t.status!=='active'&&t.building===u.building&&t.units.includes(u.no)).sort((a,b)=>((b.vacatedOn||b.endedOn||b.end)>(a.vacatedOn||a.endedOn||a.end))?1:-1)[0];
+    let st='vacant',days=null,od=0;
+    if(t){const x=C.ten[t.id];od=x?x.insts.filter(i=>i.status==='overdue').length:0;days=daysBetween(TODAY,t.end);st=od?'overdue':days<=60?'ending':'occupied'}
+    out.push({u,t,st,days,od,past,vacantSince:!t&&past?(past.vacatedOn||past.endedOn||past.end):null});
+  });
+  return out;
+}
+function series12(){
+  const months=[];let m=monthKey(TODAY);for(let k=0;k<12;k++){months.unshift(m);m=monthKey(addMonths(m+'-01',-1))}
+  const inn={},out={};months.forEach(m=>{inn[m]=0;out[m]=0});
+  D.entries.filter(e=>e.status!=='pending'&&e.cat!=='carry').forEach(e=>{const m=monthKey(e.date);if(!(m in inn))return;if(e.kind==='income')inn[m]+=e.amount;else if(e.kind==='expense')out[m]+=e.amount});
+  return months.map(m=>({m,inn:r2(inn[m]),out:r2(out[m]),cash:cashAsOf(addMonths(m+'-01',1)>TODAY?TODAY:addDays(addMonths(m+'-01',1),-1))}));
 }
 function cashAsOf(date){
   const S=D.settings,p=D.entries.filter(e=>e.status!=='pending'&&e.date<=date);let c=S.openingCash;
@@ -225,6 +245,9 @@ function alerts(C){
     if(t.needsUnit)add('red',`Assign a flat to ${t.tenant} (cheques recorded without flat)`,'#/tenant/'+t.id);
     const bad=t.installments.filter(i=>i.cheque?.status==='bounced');if(bad.length)add('red',`${bad.length} bounced cheque(s) – ${lab}`,'#/tenant/'+t.id);
   });
+  D.tenancies.filter(t=>t.status!=='active').forEach(t=>{const x=C.ten[t.id];if(!x)return;
+    if(x.depHeld>0.5&&!t.depositSettled)add('amber',`Moved out: ${aed(x.depHeld)} deposit still held – ${tenLabel(t)}. Refund or deduct it.`,'#/tenant/'+t.id);
+    const ar=x.insts.filter(i=>!i.done&&!i.cancelled);if(ar.length)add('red',`Left with ${aed(ar.reduce((s,i)=>s+i.bal,0))} unpaid – ${tenLabel(t)}`,'#/tenant/'+t.id)});
   D.contracts.forEach(c=>{if(c.renewal){const d=daysBetween(T,c.renewal);if(d<0)add('red',`${c.type} (${c.vendor}, ${bshort(c.building)}) renewal overdue since ${fd(c.renewal)}`,'#/costs');else if(d<=45)add('amber',`${c.type} (${c.vendor}, ${bshort(c.building)}) renews ${fd(c.renewal)}`,'#/costs')}});
   const u=unpaidSalaries();if(u.length)add('amber',`${u.reduce((s,x)=>s+x.months.length,0)} month(s) of watchman salary not recorded as paid (${u.map(x=>x.s.name).join(', ')})`,'#/costs');
   if(C.lateNoDecision.length)add('amber',`${C.lateNoDecision.length} late-paid cheque(s) – decide late penalty (charge / discount / waive)`,'#/overdue');

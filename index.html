@@ -1,67 +1,17 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Thani Real Estate – Admin</title><meta name="robots" content="noindex,nofollow">
-<style>
-:root{--bg:#f4f6f8;--card:#fff;--ink:#1c2630;--mut:#6b7885;--line:#e3e8ed;--pri:#0d5c63;--pri2:#e6f2f3;--red:#c0392b;--amber:#b7791f;--green:#1e8449;--blue:#2563a8}
-*{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
-a{color:var(--pri)}h2{margin:0 0 4px;font-size:22px}h3{margin:0 0 10px;font-size:15px}h4{margin:14px 0 6px}
-#app{display:grid;grid-template-columns:210px 1fr;min-height:100vh}
-#side{background:#0b3d42;color:#cfe6e8;padding:14px 10px;position:sticky;top:0;height:100vh}
-#side .brand{font-weight:700;font-size:15px;color:#fff;padding:6px 10px 14px}
-#side a{display:flex;justify-content:space-between;align-items:center;color:#cfe6e8;text-decoration:none;padding:9px 12px;border-radius:8px;margin-bottom:2px}
-#side a:hover{background:#12545a}#side a.on{background:#fff;color:var(--pri);font-weight:600}
-#inboxbadge{background:var(--red);color:#fff;border-radius:10px;padding:0 7px;font-size:11px}
-.top{display:flex;align-items:center;gap:10px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
-.top .sp{flex:1}#menu{display:none}
-main{padding:18px 20px 60px;max-width:1280px}
-.ph{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
-.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}.kpi.hl{background:var(--pri);color:#fff}.kpi.hl .ks{color:#cfe6e8}.kpi.warn{border-color:#e6b35a;background:#fff9ec}
-.kl{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}.hl .kl{color:#cfe6e8}.kv{font-size:22px;font-weight:700;margin:2px 0}.ks{font-size:12px;color:var(--mut)}
-.btn{display:inline-block;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 13px;border-radius:8px;cursor:pointer;font:inherit;text-decoration:none}
-.btn:hover{background:#f0f4f6}.btn.primary{background:var(--pri);color:#fff;border-color:var(--pri)}.btn.primary:hover{background:#0a4a50}.btn.danger{color:var(--red);border-color:#e8b7b1}.btn.sm{padding:3px 9px;font-size:12px}.btn.wide{width:100%}
-.btnchip{cursor:pointer}.chip{display:inline-block;padding:2px 9px;border-radius:12px;background:#eef1f4;font-size:12px;border:1px solid transparent}
-.chip.green{background:#e3f4ea;color:var(--green)}.chip.red{background:#fbe6e3;color:var(--red)}.chip.amber{background:#fdf1d8;color:var(--amber)}.chip.blue{background:#e4eefa;color:var(--blue)}.chip.dim{opacity:.5}
-.chips{display:flex;flex-wrap:wrap;gap:6px}label.chip input{margin-right:3px}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row.between{justify-content:space-between}.row.end{justify-content:flex-end}.wrap{flex-wrap:wrap}
-.tbl{width:100%;border-collapse:collapse}.tbl th{font-size:11px;text-transform:uppercase;color:var(--mut);text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
-.tbl td{padding:7px 8px;border-bottom:1px solid #eef1f4;vertical-align:top}.tbl .num,.num{text-align:right;font-variant-numeric:tabular-nums}.tbl tr.click{cursor:pointer}.tbl tr.click:hover{background:#f5fafa}
-.tbl tr.tot td{font-weight:700;background:#f5f8fa}.tbl.sm td,.tbl.sm th{padding:4px 6px}.tbl tr.pend{background:#fffbea}.scroll{overflow-x:auto}.nowrap{white-space:nowrap}
-.b{font-weight:600}.big{font-size:16px;font-weight:700}.muted{color:var(--mut)}.xs{font-size:11px}.sm{font-size:12px}.bad{color:var(--red)}.ok{color:var(--green)}
-.note{background:#eef5f9;border:1px solid #cfe0ec;border-radius:8px;padding:9px 12px;margin:0 0 12px}.note.amber{background:#fff7e6;border-color:#f0d9a0}.note.red{background:#fdecea;border-color:#f1b9b2}.note.ok{background:#e9f6ee;border-color:#bfe0cb}
-.alerts{list-style:none;margin:0;padding:0}.alerts li{padding:6px 10px;border-left:4px solid #ccc;margin-bottom:6px;background:#fafbfc;border-radius:0 6px 6px 0}.alerts li a{text-decoration:none;color:var(--ink)}
-.alerts .red{border-color:var(--red)}.alerts .amber{border-color:#e6a23c}.alerts .blue{border-color:var(--blue)}
-.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.filters input,.filters select{padding:7px 9px}
-input[hidden]{display:none!important}
-input,select,textarea{font:inherit;padding:7px 9px;border:1px solid #cdd5dc;border-radius:7px;background:#fff;max-width:100%}
-label{display:block;font-size:12px;color:var(--mut)}label input:not([type=checkbox]):not([type=radio]),label select{display:block;margin-top:3px;width:100%}label.chk{display:flex;gap:6px;align-items:center;color:var(--ink);font-size:13px}
-.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px 14px;margin-bottom:12px}.fg .wide2{grid-column:span 2}
-.w70{width:70px!important}.w90{width:95px!important}.w110{width:115px!important}.box{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:#fafcfd}
-.gen{margin:8px 0}.gen label{display:block}.gen input,.gen select{width:auto!important}
-.kvs{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}.kvs div span{display:block;font-size:11px;color:var(--mut)}.files{list-style:none;padding:0;margin:0 0 10px}
-.ov{position:fixed;inset:0;background:rgba(20,30,40,.5);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:30px 12px}
-.dlg{background:#fff;border-radius:14px;width:min(720px,100%);box-shadow:0 20px 60px rgba(0,0,0,.3)}.dlg.wide{width:min(1060px,100%)}.dlg.small{width:min(440px,100%)}
-.dh{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}.dh h3{margin:0;font-size:17px}.db{padding:16px 18px}
-.x{background:none;border:0;font-size:22px;cursor:pointer;color:var(--mut)}.x.sm{font-size:16px;padding:0 4px}
-#toasts{position:fixed;right:14px;bottom:14px;z-index:99;display:flex;flex-direction:column;gap:8px}.toast{background:#1c2630;color:#fff;padding:10px 14px;border-radius:8px;max-width:360px;box-shadow:0 6px 18px rgba(0,0,0,.25)}.toast.err{background:var(--red)}.toast.ok{background:var(--green)}
-.drop{display:block;border:2px dashed #b9c6cf;border-radius:12px;padding:30px;text-align:center;cursor:pointer;background:#fafcfd;color:var(--mut)}.drop:hover{background:var(--pri2)}
-#login[hidden],#app[hidden]{display:none!important}
-#login{min-height:100vh;display:flex;align-items:center;justify-content:center}.lbox{background:#fff;padding:28px;border-radius:14px;width:min(400px,92vw);box-shadow:0 12px 40px rgba(0,0,0,.12)}.lbox .logo{font-size:20px;font-weight:700;margin-bottom:14px}.lbox label{margin-bottom:10px}
-textarea{width:100%;margin:8px 0;font-family:ui-monospace,monospace;font-size:12px}
-@media(max-width:860px){#app{grid-template-columns:1fr}#side{position:fixed;left:-230px;width:220px;z-index:30;transition:.2s}#side.open{left:0}#menu{display:inline-block}.grid2{grid-template-columns:1fr}.fg .wide2{grid-column:span 1}main{padding:14px 10px 60px}.kvs{grid-template-columns:1fr}}
-@media print{#side,.top,.btn,.filters{display:none!important}#app{display:block}body{background:#fff}.card{border:0}}
-</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css"><meta name="theme-color" content="#2c001e"></head><body>
 <div id="login"></div>
 <div id="app" hidden>
- <nav id="side"><div class="brand">🏢 Thani Real Estate</div>
+ <nav id="side"><div class="brand"><i>🏢</i>Thani Real Estate</div>
   <a href="#/dashboard" data-r="dashboard">📊 Dashboard</a><a href="#/tenants" data-r="tenants">👥 Tenants & Ejari</a><a href="#/cheques" data-r="cheques">🧾 Cheque register</a>
   <a href="#/receipts" data-r="receipts">📥 Receipts <span id="inboxbadge" hidden></span></a><a href="#/overdue" data-r="overdue">⏰ Overdue & penalties</a><a href="#/ledger" data-r="ledger">📒 Ledger</a>
   <a href="#/partners" data-r="partners">🤝 Partners</a><a href="#/costs" data-r="costs">🛠 Expenses & staff</a><a href="#/settings" data-r="settings">⚙️ Settings</a></nav>
  <div><div class="top"><button class="btn" id="menu">☰</button><span class="sp"></span><span id="syncchip" class="chip"></span><span class="muted xs" id="whoami"></span><button class="btn sm" id="signout" data-act="signout" hidden>Sign out</button></div><main id="main"></main></div>
 </div>
-<div id="modal"></div><div id="toasts"></div>
+<nav id="tabbar"><a href="#/dashboard" data-r="dashboard"><span class="ti">🏠</span>Home</a><a href="#/tenants" data-r="tenants"><span class="ti">🔑</span>Tenants</a><button class="fab" data-act="quickAdd" aria-label="Add">+</button><a href="#/partners" data-r="partners"><span class="ti">🤝</span>Partners</a><button class="tb" id="moreBtn"><span class="ti">☰</span>More</button></nav>
+<div id="tip"></div><div id="modal"></div><div id="toasts"></div>
 <script src="config.js" onerror="void 0"></script>
-<script src="parse.js"></script><script src="core.js"></script><script src="app.js"></script><script src="app2.js"></script>
+<script src="parse.js"></script><script src="core.js"></script><script src="charts.js"></script><script src="app.js"></script><script src="app2.js"></script><script src="app3.js"></script>
 </body></html>
