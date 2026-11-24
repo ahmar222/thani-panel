@@ -77,7 +77,7 @@ const ILL={
 const I3_IK='https://ik.imagekit.io/3dicons/tr:w-256,h-256/v1/',I3_DO='https://3dicons.sgp1.cdn.digitaloceanspaces.com/v1/';
 const i3=(name,cls='',alt='')=>{const p=`iso/color/${name}-iso-color.png`;return `<img class="i3d ${cls}" src="${I3_IK}${p}" data-p="${p}" data-k="${cls}" alt="${alt}" loading="lazy" decoding="async" onerror="i3err(this)">`};
 function i3err(el){if(!el.dataset.f){el.dataset.f=1;el.src=I3_DO+el.dataset.p}else el.remove()}
-const I3K={keys:'key',inbox:'file-text',check:'tick',building:'key'};
+const I3K={keys:'map-pin',inbox:'file-text',check:'tick',building:'map-pin'};
 const empty=(kind,text)=>`<div class="empty"><div class="eimg">${ILL[kind]||''}${I3K[kind]?`<img class="i3d big bob" src="${I3_IK}iso/color/${I3K[kind]}-iso-color.png" alt="" loading="lazy" onload="this.parentNode.firstChild.style.display='none'" onerror="this.remove()">`:''}</div><div>${text}</div></div>`;
 
 /* phones: turn every table into stacked cards (CSS does the rest at <=860px) */

@@ -61,7 +61,7 @@ PAGES.dashboard=()=>{
    <div class="tile hero s7"><span class="glow"></span>${i3("money-bag","hero-i bob")}<div class="cap">Owed to partners today</div><div class="big-n"><small>AED</small>${cn(C.owedTotal)}</div>
      <div class="cap" style="margin-top:6px">Bank balance ${aed(C.cash)} · reserve ${aed(S.reserve)} kept${v?(vok?' · <b style="color:#9ff0bd">✓ matches bank</b>':' · <b style="color:#ffc2bd">⚠ differs from statement</b>'):''}</div>
      <div style="margin-top:10px">${spark(ser.map(s=>s.cash),'#ff8a5c')}</div>
-     <div class="row" style="margin-top:6px"><button class="btn primary" data-act="distribute">Distribute to partners</button><a class="btn ghost-w" href="#/partners">See shares</a></div></div>
+     <div class="row" style="margin-top:6px"><button class="btn primary" data-act="distribute">Distribute to partners</button><a class="btn ghost-w" href="#/partners">See shares</a><a class="btn ghost-w" href="#/bank">Bank check</a></div></div>
    <div class="tile s5">${i3("calender","corner")}<h3>Rent this month</h3><div class="row" style="gap:18px;flex-wrap:nowrap">${ring(mr.due?mr.got/mr.due:0,mr.due&&mr.got>=mr.due?COL.occ:COL.in,{size:150,sub:'collected'})}<div><div class="mid-n"><small>AED</small>${cn(mr.got)}</div><div class="cap">of ${aed(mr.due)} due in ${MON[+TODAY.slice(5,7)-1]}</div>${odAmt?`<div class="chip red" style="margin-top:8px">${aed(odAmt)} overdue</div>`:'<div class="chip green" style="margin-top:8px">Nothing overdue</div>'}</div></div></div>
 
    <div class="tile s4"><h3>Flats</h3><div class="donutwrap">${donut([{v:cnt('occupied'),color:COL.occ,label:'Occupied'},{v:cnt('ending'),color:COL.end,label:'Ending soon'},{v:cnt('overdue'),color:COL.od,label:'Rent overdue'},{v:cnt('vacant'),color:COL.vac,label:'Vacant'}],{size:150,center:`${let_}/${states.length}`,sub:'let'})}
@@ -76,7 +76,7 @@ PAGES.dashboard=()=>{
    <div class="tile s6">${i3("bell","corner")}<h3>Needs attention</h3>${A.length?`<ul class="alerts">${A.slice(0,8).map(a=>`<li class="${a.lvl}"><a href="${a.link}">${esc(a.txt)}</a></li>`).join('')}</ul>${A.length>8?`<p class="muted">+ ${A.length-8} more</p>`:''}`:empty('check','All clear')}</div>
    <div class="tile s6"><div class="row between"><h3>Each partner is owed</h3><a class="btn sm" href="#/partners">Details</a></div>${hbars(pb,{color:COL.in})}</div>
 
-   <div class="tile s12">${i3("key","corner")}<div class="row between"><h3>Your buildings</h3><a class="btn sm" href="#/tenants">Tenants</a></div><div class="cap">Tap a flat to receive rent, move someone in, or record a move-out.</div><div style="margin-top:14px">${D.buildings.map(b=>unitMap(b.id,states)).join('')}${mapLegend()}</div></div>
+   <div class="tile s12"><div class="row between"><h3>Your buildings</h3><a class="btn sm" href="#/tenants">Tenants</a></div><div class="cap">Tap a flat to receive rent, move someone in, or record a move-out.</div><div style="margin-top:14px">${D.buildings.map(b=>unitMap(b.id,states)).join('')}${mapLegend()}</div></div>
 
    <div class="tile s6"><h3>Where the money went</h3><div class="cap">Last 12 months · ${aed(ebT)}</div>${top.length?hbars(top,{color:COL.out}):empty('inbox','No expenses yet')}</div>
    <div class="tile s6"><div class="row between"><h3>Overdue cheques</h3><a class="btn sm" href="#/overdue">All &amp; penalties</a></div>${overdueTable(C.overdue.slice(0,6))}${arrAmt>0?`<div class="note red" style="margin-top:10px">Ex-tenants still owe <b>${aed(arrAmt)}</b> (${C.arrears.length} cheque(s))</div>`:''}</div>

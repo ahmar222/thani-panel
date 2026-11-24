@@ -206,7 +206,7 @@ actions.backup=()=>download(`thani-backup-${TODAY}.json`,JSON.stringify(D,null,1
 window.restoreBackup=inp=>{const f=inp.files[0];if(!f)return;f.text().then(t=>{try{const d=JSON.parse(t);if(!d.entries||!d.tenancies)throw 0;confirmBox('Replace ALL current data with this backup?',()=>{D=d;migrate();save();toast('Restored','ok')},'Replace')}catch(e){toast('Not a valid backup file','err')}})};
 
 /* ---------- boot / login ---------- */
-function migrate(){D.lateFees=D.lateFees||[];D.contracts=D.contracts||[];D.staff=D.staff||[];D.files=D.files||[];D.units=D.units||[];D.settings.tol??=10}
+function migrate(){D.bankStmt=D.bankStmt||null;D.lateFees=D.lateFees||[];D.contracts=D.contracts||[];D.staff=D.staff||[];D.files=D.files||[];D.units=D.units||[];D.settings.tol??=10}
 function showApp(){$('#login').hidden=true;$('#app').hidden=false;$('#whoami').textContent=MODE==='cloud'?(GHC.email||''):'local mode';$('#signout').hidden=MODE!=='cloud';migrate();if(!location.hash)location.hash='#/dashboard';refresh();setSync(MODE==='cloud'?'ok':'local')}
 actions.signout=()=>{localStorage.removeItem(LS_CRED);sessionStorage.removeItem(LS_CRED);localStorage.removeItem(LS_DATA);location.reload()};
 async function connect(cfg){

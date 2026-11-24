@@ -59,6 +59,36 @@ function parseReceipt(raw){
   o.ok=!!(o.amount&&o.date);
   return o;
 }
-const api={parseEjari,parseReceipt,clean};
+
+function parseStatement(raw){
+  const lines=clean(raw).split('\n').map(s=>s.trim()).filter(Boolean);
+  const o={txns:[],opening:null,closing:null,bad:0};
+  const hdr=/STATEMENT OF ACCOUNT FOR THE PERIOD OF (\d{2})-(\d{2})-(\d{4}) to (\d{2})-(\d{2})-(\d{4})/i.exec(lines.join(' '));
+  if(hdr){o.from=`${hdr[3]}-${hdr[2]}-${hdr[1]}`;o.to=`${hdr[6]}-${hdr[5]}-${hdr[4]}`}
+  const ac=/Account No\.?\s+(\d{10,})/.exec(lines.join(' '));if(ac)o.account=ac[1];
+  const noise=/^(Bank TRN|Confirmation of|bank within|Emirates Islamic|by the Central|This is an electronically|statement, hence|signature|Date Description|Page \d|Customer Name|Branch|Tel\. no|Pages|Currency|Account|POST BOX|DUBAI|NA\b|Expected|payout|IBAN|STATEMENT OF|THANI RASHED)/i;
+  const row=/^(\d{2})\/(\d{2})\/(\d{4})\s+(.*?)\s*(?:([\d,]+\.\d{2})\s+)?([\d,]+\.\d{2}) ?(Cr|Dr)\s*$/;
+  let cur=null,prev=null;
+  const flush=()=>{if(cur){cur.desc=cur.desc.replace(/\s+/g,' ').trim();const m=/REFNO:?-?\s*([A-Z0-9]{8,})/i.exec(cur.desc)||/\b([A-Z]\d{14,18})\b/.exec(cur.desc);if(m)cur.ref=m[1];
+      const f=/TRANSFER FROM (.+?) AE\d/i.exec(cur.desc);if(f)cur.from=f[1].trim();o.txns.push(cur);cur=null}};
+  for(const L of lines){
+    if(/Notes on Accounts|^=====/.test(L)){flush();continue}
+    const m=row.exec(L);
+    if(m){
+      flush();
+      const bal=num(m[6])*(m[7]==='Dr'?-1:1),date=`${m[3]}-${m[2]}-${m[1]}`;
+      if(/BROUGHT FORWARD/i.test(m[4])){o.opening=bal;o.openingDate=date;prev=bal;continue}
+      if(prev==null){prev=bal;continue}
+      const d=Math.round((bal-prev)*100)/100,amt=m[5]?num(m[5]):null;
+      if(amt!=null&&Math.abs(Math.abs(d)-amt)>0.011)o.bad++;
+      cur={date,desc:m[4],amount:Math.abs(d),type:d>=0?'credit':'debit',balance:bal};prev=bal;o.closing=bal;
+    }else if(cur&&!noise.test(L)&&!/^[\d,\s.]*$/.test(L||'')||(cur&&/^\d{15,}$/.test(L)))cur.desc+=' '+L;
+  }
+  flush();
+  if(o.closing==null)o.closing=o.opening;
+  o.ok=o.txns.length>0&&o.opening!=null;
+  return o;
+}
+const api={parseEjari,parseReceipt,parseStatement,clean};
 if(typeof module!=='undefined')module.exports=api; else root.Parse=api;
 })(this);
