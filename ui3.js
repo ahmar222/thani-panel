@@ -113,4 +113,11 @@ actions.ledAtt=async d=>{const e=D.entries.find(x=>x.id===d.id);if(!e||!e.file)r
   try{const b=await blobOf(e.file.path,e.file.name);if(!b)throw new Error('file not found');const t=b.type||(/pdf$/i.test(e.file.name)?'application/pdf':'image/jpeg'),u=URL.createObjectURL(new Blob([b],{type:t}));
    $('#drawer').innerHTML=`<div class="dhd"><div><b>${esc(e.file.name.replace(/^\d+-/,''))}</b><div class="muted xs">AED ${money(e.amount)} · ${fd(e.date)}</div></div><button class="x" data-act="closeDrawer" aria-label="Close">×</button></div><div class="dbd" style="padding:0;flex:1">${t==='application/pdf'?`<iframe src="${u}" style="width:100%;height:100%;border:0"></iframe>`:`<img src="${u}" style="width:100%" alt="">`}</div>`;$('#drawer').classList.add('open');
    window._attOpen=1}catch(err){toast('Could not open file: '+err.message,'err')}};
+
+/* ---------- landlord bank details (Settings) ---------- */
+const _ps=PAGES.settings;
+PAGES.settings=()=>{const h=_ps(),B=landlordBank(),k=h.indexOf('<section class="card"><h3>Partners');
+  const card=`<section class="card"><h3>Landlord bank details</h3><p class="muted">Printed on late payment notices so tenants know where to pay. Change them here if the account ever changes.</p><form data-form="landlordBank"><div class="fg"><label>Bank name<input name="bankName" value="${esc(B.bankName)}"></label><label>Account name<input name="accName" value="${esc(B.accName)}"></label><label>Account number<input name="accNo" value="${esc(B.accNo)}" inputmode="numeric"></label><label>IBAN<input name="iban" value="${esc(B.iban)}" style="text-transform:uppercase"></label></div><div class="row end"><button class="btn primary">Save bank details</button></div></form></section>`;
+  return k<0?h+card:h.slice(0,k)+card+h.slice(k)};
+forms.landlordBank=f=>{D.settings.landlordBank={bankName:f.get('bankName').trim(),accName:f.get('accName').trim(),accNo:f.get('accNo').replace(/\s+/g,''),iban:f.get('iban').replace(/\s+/g,'').toUpperCase()};save();toast('Bank details saved','ok')};
 })();
