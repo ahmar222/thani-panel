@@ -1,0 +1,116 @@
+/* ===== UI v2 part 2: Cheque register, Receipts, Ledger ===== */
+(function(){
+const I=(n,s=16,w=1.9)=>svgi(n,s,w);
+const pillOf=(t,c)=>`<span class="pill ${c}">${esc(t)}</span>`;
+const infoKey='thani_info';const infoOff=k=>{try{return (localStorage.getItem(infoKey)||'').includes('|'+k+'|')}catch(e){return false}};
+actions.infoX=d=>{try{localStorage.setItem(infoKey,(localStorage.getItem(infoKey)||'|')+d.k+'|')}catch(e){}refresh()};
+actions.infoT=d=>{F.info=F.info||{};F.info[d.k]=!F.info[d.k];refresh()};
+const infoBlock=(k,txt)=>`<button class="btn icon-i" style="display:inline-grid;padding:4px;width:30px;height:30px;place-items:center;border-radius:50%" data-act="infoT" data-k="${k}" aria-label="Help">${I('info',18)}</button>`+((F.info&&F.info[k]&&!infoOff(k))?`<div class="inf-note" style="margin-top:10px"><span>${txt}</span><button class="sx" data-act="infoX" data-k="${k}" aria-label="Hide for good">${I('x',14,2.2)}</button></div>`:'');
+const flatBadge=t=>`<span class="fb">${esc(bshort(t.building))} · ${esc(t.units.join('+')||'?')}</span>`;
+
+/* ---------- cheque register ---------- */
+F.cheques=Object.assign({b:'',q:'',tab:'open',sel:{}},F.cheques||{});
+const TABS=[['all','All'],['open','Not yet paid'],['overdue','Overdue'],['week','Due next 7 days'],['cleared','Cleared'],['bounced','Bounced']];
+function allCheques(){const L=[];D.tenancies.filter(t=>t.status==='active').forEach(t=>{if(F.cheques.b&&t.building!==F.cheques.b)return;CC.ten[t.id].insts.forEach(i=>{if(!i.cancelled)L.push(i)})});return L}
+const inTab=(i,k)=>{const dl=daysBetween(TODAY,i.due),cs=i.cheque?(i.cheque.status||'held'):'none';
+  return k==='all'?true:k==='open'?!i.done:k==='overdue'?i.openLate>0:k==='week'?(!i.done&&dl>=0&&dl<=7):k==='cleared'?cs==='cleared':k==='bounced'?cs==='bounced':true};
+window.chequeRows=function(){const q=(F.cheques.q||'').toLowerCase();
+  return allCheques().filter(i=>inTab(i,F.cheques.tab)&&(!q||(i.t.tenant+' '+i.t.units.join(' ')+' '+(i.cheque?.no||'')+' '+(i.cheque?.bank||'')+' '+bshort(i.t.building)).toLowerCase().includes(q))).sort((a,b)=>a.due<b.due?-1:a.due>b.due?1:0)};
+PAGES.cheques=()=>`<div class="ph"><div><h2>Cheque register ${infoBlock('chq','Every tenant cheque, one row per instalment. To change a tenant\'s cheques, open the tenant and choose <b>Edit / cheques</b>.')}</h2></div><div class="toolbar"><button class="btn primary" data-act="addCheques">${I('plus',16,2.2)} Add cheques</button><button class="btn outline" data-act="chqCsv">Export CSV</button></div></div>
+ <div class="fbar"><div class="sbox"><input data-f="cheques.q" value="${esc(F.cheques.q)}" placeholder="Search tenant, flat or cheque number…" id="chqq"><button data-act="clrQ" data-k="cheques" aria-label="Clear" ${F.cheques.q?'':'hidden'}>×</button></div><select data-f="cheques.b">${bOpts(F.cheques.b,'All buildings')}</select></div><div id="tbl"></div>`;
+actions.clrQ=d=>{F[d.k].q='';refresh()};
+function chqRow(i){
+  const cs=i.cheque?CHQ_ST[i.cheque.status||'held']:null,[sl,sc]=ST_CHIP[i.status],od=i.openLate>0&&!i.done;
+  const tone={green:'green',red:'red',amber:'amber',blue:'blue','':'gray',dim:'gray'};
+  const st=od?pillOf('Overdue · '+i.openLate+'d','red'):pillOf(sl,tone[sc]||'gray');
+  const cn=i.cheque?.no,bk=i.cheque?.bank;
+  return `<tr><td><input type="checkbox" data-sel="${i.tid}|${i.no}" ${F.cheques.sel[i.tid+'|'+i.no]?'checked':''}></td><td class="nw">${fd(i.due)}</td><td>${flatBadge(i.t)}</td><td><a href="#/tenant/${i.tid}">${esc(i.t.tenant)}</a></td><td>${i.no}</td>
+  <td class="two">${cn||bk?`<b>${esc(cn||'—')}</b>${bk?`<span>${esc(bk)}</span>`:''}`:'<span class="muted">—</span>'}</td>
+  <td class="num"><span class="muted xs">AED</span> ${money(chqFace(i))}${i.deposit?`<div class="muted xs">incl. ${money(i.deposit,0)} deposit</div>`:''}</td><td>${cs?pillOf(cs[0],{blue:'blue',amber:'amber',green:'green',red:'red'}[cs[1]]||'gray'):'<span class="muted">—</span>'}</td><td>${st}</td>
+  <td class="num nw">${i.done?'':`<button class="btn sm" data-act="payInst" data-t="${i.tid}" data-n="${i.no}">Receive</button> `}<button class="btn sm" data-act="chqEdit" data-t="${i.tid}" data-n="${i.no}">Edit</button></td></tr>`}
+window._draw.cheques=()=>{
+  const base=allCheques(),L=chequeRows(),tot=L.reduce((s,i)=>s+chqFace(i),0),n=Object.values(F.cheques.sel).filter(Boolean).length;
+  const x=$('[data-act=clrQ]');if(x)x.hidden=!F.cheques.q;
+  $('#tbl').innerHTML=`<div class="tabs" style="margin-bottom:12px">${TABS.map(([k,l])=>`<button class="${F.cheques.tab===k?'on':''}" data-act="chqTab" data-k="${k}">${l}<b>${base.filter(i=>inTab(i,k)).length}</b></button>`).join('')}</div>
+  <div class="bulk" ${n?'':'hidden'}><b>${n} selected</b><span class="sp" style="flex:1"></span><button class="btn sm" data-act="bulkChq" data-s="deposited">Mark as deposited</button><button class="btn sm" data-act="bulkChq" data-s="cleared">Mark as cleared</button><button class="btn sm" data-act="bulkClear">Clear</button></div>
+  <div class="muted xs" style="margin:0 0 8px">${L.length} cheque${L.length===1?'':'s'} · <span class="tnum">AED ${money(tot,2)}</span></div>
+  <div class="tcard"><div class="tscroll"><table><thead><tr><th><input type="checkbox" data-selall ${L.length&&L.every(i=>F.cheques.sel[i.tid+'|'+i.no])?'checked':''}></th><th>Cheque date</th><th>Flat</th><th>Tenant</th><th>#</th><th>Cheque no. / Bank</th><th class="num">Amount</th><th>Cheque</th><th>Rent</th><th></th></tr></thead><tbody>${L.map(chqRow).join('')||'<tr><td colspan="10" class="muted" style="padding:24px;text-align:center">Nothing here.</td></tr>'}</tbody></table></div></div>`;
+};
+actions.chqTab=d=>{F.cheques.tab=d.k;_draw.cheques()};
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.sel){F.cheques.sel[t.dataset.sel]=t.checked;_draw.cheques()}
+  if(t.dataset&&'selall' in t.dataset){chequeRows().forEach(i=>F.cheques.sel[i.tid+'|'+i.no]=t.checked);_draw.cheques()}});
+actions.bulkClear=()=>{F.cheques.sel={};_draw.cheques()};
+actions.bulkChq=d=>{const keys=Object.keys(F.cheques.sel).filter(k=>F.cheques.sel[k]);let n=0;
+  keys.forEach(k=>{const [tid,no]=k.split('|'),t=tenById(tid),i=t&&t.installments.find(z=>String(z.no)===no);if(!i)return;i.cheque=i.cheque||{};i.cheque.prevStatus=i.cheque.status;i.cheque.status=d.s;n++});
+  F.cheques.sel={};save();toast(n+' cheque'+(n===1?'':'s')+' marked '+d.s,'ok')};
+actions.addCheques=()=>{
+  const act=D.tenancies.filter(t=>t.status==='active');
+  modal({small:1,title:'Add cheques',body:`<p class="muted">Pick the tenant these cheques belong to – or add a brand-new tenant.</p><label>Existing tenant<select id="acT">${opt(act.map(t=>[t.id,`${bshort(t.building)} ${t.units.join('+')||'?'} – ${t.tenant}`]),'','— choose tenant —')}</select></label><div class="row end" style="margin-top:14px"><button class="btn" data-act="addChqNew">New tenant instead</button><button class="btn primary" data-act="addChqGo">Continue</button></div>`})};
+actions.addChqGo=()=>{const id=$('#acT').value;if(!id)return toast('Choose a tenant first','err');closeModal();actions.editTenant({id})};
+actions.addChqNew=()=>{closeModal();actions.newTenant({})};
+
+/* ---------- receipts ---------- */
+F.receipts=Object.assign({q:'',b:'',m:''},F.receipts||{});
+const rec=()=>{const q=(F.receipts.q||'').toLowerCase();return D.entries.filter(e=>e.file&&e.status!=='pending'&&(!F.receipts.b||e.building===F.receipts.b)&&(!F.receipts.m||e.date.slice(0,7)===F.receipts.m)&&(!q||((e.unitLabel||'')+' '+catName(e)+' '+(e.desc||'')+' '+e.file.name).toLowerCase().includes(q))).sort((a,b)=>a.date<b.date?1:-1)};
+function matchFor(e){ // guess tenant by payer name and amount
+  const act=D.tenancies.filter(t=>t.status==='active'),pay=(e.payer||'').toLowerCase(),words=pay.split(/\s+/).filter(w=>w.length>2);let best=null,sc=0;
+  act.forEach(t=>{let s=0,why=[];const nm=(t.tenant+' '+(t.aliases||[]).join(' ')).toLowerCase();
+    if(words.length&&words.filter(w=>nm.includes(w)).length>=Math.min(2,words.length)){s+=3;why.push('payer name')}
+    CC.ten[t.id].insts.filter(i=>!i.done&&!i.cancelled).slice(0,2).forEach(i=>{if([i.bal,chqFace(i),i.amount].some(v=>Math.abs(v-e.amount)<=1)){s+=3;why.push('amount = cheque #'+i.no)}});
+    if(s>sc){sc=s;best={t,why:[...new Set(why)]}}});
+  return sc>=3?best:null}
+PAGES.receipts=()=>{
+  const P=CC.pending,months=[...new Set(D.entries.filter(e=>e.file).map(e=>e.date.slice(0,7)))].sort().reverse();
+  return `<div class="ph"><div><h2>Receipts</h2></div><div class="toolbar"><button class="btn outline" data-act="addReceipt">${I('plus',16,2.2)} Enter manually</button></div></div>
+  <label class="dz" id="drop"><span class="up">${I('upload',40,1.5)}</span><div style="font-weight:700;font-size:18px;margin-top:6px">Click to choose files, or drag and drop here</div><div class="muted">Bank transfers, cash-deposit slips and photos are read automatically.</div><div class="fmt"><span class="pill gray">PDF</span><span class="pill gray">JPG</span><span class="pill gray">PNG</span></div><input type="file" multiple accept="application/pdf,image/*" hidden data-act-change="ingest"></label>
+  ${P.length?`<div class="tile" style="margin-top:20px"><h3>Waiting to be assigned (${P.length})</h3>${P.map(e=>{const m=e.kind==='income'?matchFor(e):null;return `<div class="tcard" style="margin:10px 0;padding:12px 14px"><div class="row between" style="gap:12px"><div><b>AED ${money(e.amount)}</b> <span class="muted">· ${fd(e.date)}</span><div>${esc(e.kind==='payout'?'PAYOUT to '+(partnerById(e.partnerId)?.short||'?')+' – ':'')}${esc(e.desc||'')} ${e.file?`<a href="#" data-act="openFile" data-p="${esc(e.file.path)}" data-n="${esc(e.file.name)}">${I('file',14)}</a>`:''}</div>${e.hint?`<div class="muted xs">${esc(e.hint)}</div>`:''}</div><div class="row" style="gap:8px">${e.kind==='payout'?`<button class="btn sm primary" data-act="postPayout" data-id="${e.id}">Record payout</button>`:`<button class="btn sm ${m?'':'primary'}" data-act="assignPending" data-id="${e.id}">Assign flat…</button>`}<button class="btn sm danger" data-act="delEntry" data-id="${e.id}">×</button></div></div>
+   ${m?`<div class="match"><span>${I('check',18,2.2)} Looks like <b>${esc(bshort(m.t.building))} · ${esc(m.t.units.join('+')||'?')}</b> – ${esc(m.t.tenant)} <span class="muted xs">(${m.why.join(', ')})</span></span><button class="btn sm primary" data-act="confirmMatch" data-id="${e.id}" data-t="${m.t.id}">Confirm match</button></div>`:''}</div>`}).join('')}</div>`:`<div class="slim">${I('check',18,2.2)} 0 unassigned receipts</div>`}
+  <div class="tile" style="margin-top:20px"><div class="row between" style="margin-bottom:12px"><h3>Recorded with attachments</h3><button class="btn outline sm" data-act="zipReceipts">${I('upload',15)} Download ZIP</button></div>
+   <div class="fbar"><div class="sbox"><input data-f="receipts.q" value="${esc(F.receipts.q)}" placeholder="Search flat, category, file…"><button data-act="clrQ" data-k="receipts" ${F.receipts.q?'':'hidden'}>×</button></div><select data-f="receipts.b">${bOpts(F.receipts.b,'All buildings')}</select><select data-f="receipts.m">${opt(months.map(m=>[m,MON[+m.slice(5)-1]+' '+m.slice(0,4)]),F.receipts.m,'All months')}</select></div><div id="tbl"></div></div>`};
+window._draw.receipts=()=>{const L=rec().slice(0,60);
+  $('#tbl').innerHTML=L.length?`<div class="tcard"><div class="tscroll"><table><thead><tr><th>Date</th><th>Building &amp; unit</th><th>Category</th><th class="num">Amount</th><th>Receipt file</th></tr></thead><tbody>${L.map(e=>`<tr><td class="nw">${fd(e.date)}</td><td>${e.building||e.unitLabel?`<span class="fb">${esc(bshort(e.building))}${e.unitLabel?' · '+esc(e.unitLabel):''}</span>`:'—'}</td><td>${esc(catName(e))}</td><td class="num"><span class="muted xs">AED</span> ${money(e.amount)}</td><td><button class="pill blue" style="border:0;cursor:pointer" data-act="viewFile" data-p="${esc(e.file.path)}" data-n="${esc(e.file.name)}">${/pdf$/i.test(e.file.name)?'View PDF':'View image'}</button></td></tr>`).join('')}</tbody></table></div></div>`:'<p class="muted">No receipts match.</p>'};
+actions.confirmMatch=d=>{const e=D.entries.find(x=>x.id===d.id);actions.assignPending({id:e.id});setTimeout(()=>{const f=$('#modal form');if(f&&f.tid){f.tid.value=d.t;f.tid.dispatchEvent(new Event('change',{bubbles:true}))}},60)};
+async function blobOf(path,name){if(MODE==='cloud'){const r=await ghApi(path,{q:'?ref='+encodeURIComponent(GHC.branch),raw:1});if(!r.ok)throw new Error(r.status);return await r.blob()}return await IDB.get(path)}
+actions.viewFile=async d=>{try{const b=await blobOf(d.p,d.n);if(!b)throw new Error('file not found');const ext=d.n.split('.').pop().toLowerCase(),type=b.type||({pdf:'application/pdf',png:'image/png'}[ext]||'image/jpeg'),u=URL.createObjectURL(new Blob([b],{type}));
+  const e=D.entries.find(x=>x.file&&x.file.path===d.p);
+  modal({wide:1,title:esc(d.n),body:`<div class="split">${type==='application/pdf'?`<iframe src="${u}"></iframe>`:`<img src="${u}" alt="">`}<div>${e?`<div class="dgrid"><div><span>Date</span><b>${fd(e.date)}</b></div><div><span>Amount</span><b>AED ${money(e.amount)}</b></div><div><span>Flat</span><b>${esc(e.unitLabel||'—')}</b></div><div><span>Category</span><b>${esc(catName(e))}</b></div><div class="wide"><span>Description</span><b>${esc(e.desc||'')}</b></div></div><button class="btn" data-act="editEntry" data-id="${e.id}">Edit entry</button> `:''}<a class="btn" href="${u}" target="_blank">Open in new tab</a></div></div>`})}catch(err){toast('Could not open file: '+err.message,'err')}};
+actions.zipReceipts=async()=>{const L=rec();if(!L.length)return toast('No receipts to download','err');
+  try{if(!window.JSZip)await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';s.onload=ok;s.onerror=()=>no(new Error('ZIP library could not load (offline?)'));document.head.appendChild(s)});
+    const z=new JSZip();let n=0;for(const e of L){try{const b=await blobOf(e.file.path,e.file.name);if(b){z.file(`${e.date}_${(e.unitLabel||'general').replace(/\W+/g,'')}_${e.file.name.replace(/^\d+-/,'')}`,b);n++}}catch(_){}}
+    const out=await z.generateAsync({type:'blob'});const a=document.createElement('a');a.href=URL.createObjectURL(out);a.download=`receipts-${F.receipts.m||'all'}.zip`;a.click();toast(n+' files zipped','ok')}catch(e){toast(e.message,'err')}};
+document.addEventListener('dragover',e=>{const z=e.target.closest&&e.target.closest('#drop');$$('.dz').forEach(d=>d.classList.toggle('over',!!z))});
+document.addEventListener('drop',()=>$$('.dz').forEach(d=>d.classList.remove('over')));
+document.addEventListener('dragleave',e=>{if(!e.relatedTarget)$$('.dz').forEach(d=>d.classList.remove('over'))});
+
+/* ---------- ledger ---------- */
+F.ledger=Object.assign({q:'',kind:'',cat:'',b:'',from:'',to:'',run:false,pre:'all'},F.ledger||{});
+const PRE=[['month','This month'],['quarter','Last quarter'],['ytd','Year to date'],['all','All time']];
+actions.ledPre=d=>{const f=F.ledger,y=TODAY.slice(0,4),m=TODAY.slice(0,7);f.pre=d.k;
+  if(d.k==='month'){f.from=m+'-01';f.to=addDays(addMonths(m+'-01',1),-1)}
+  else if(d.k==='quarter'){const q=Math.floor((+TODAY.slice(5,7)-1)/3),sm=addMonths(y+'-01-01',q*3-3);f.from=sm;f.to=addDays(addMonths(sm,3),-1)}
+  else if(d.k==='ytd'){f.from=y+'-01-01';f.to=TODAY}else{f.from='';f.to=''}refresh()};
+actions.ledRun=()=>{F.ledger.run=!F.ledger.run;_draw.ledger()};
+PAGES.ledger=()=>`<div class="ph"><div><h2>Ledger</h2></div><div class="toolbar"><button class="btn primary" data-act="addReceipt">${I('plus',16,2.2)} Receipt</button><button class="btn" data-act="addExpense">${I('plus',16,2.2)} Expense</button><button class="btn outline" data-act="ledCsv">Export CSV</button></div></div>
+ <div id="kpis"></div>
+ <div class="fbar"><div class="sbox" style="min-width:200px"><input data-f="ledger.q" value="${esc(F.ledger.q)}" placeholder="Search description, flat, ref…"></div><select data-f="ledger.kind">${opt([['income','Money in'],['expense','Expenses'],['payout','Partner payouts']],F.ledger.kind,'All types')}</select>
+ <select data-f="ledger.cat">${opt([...Object.entries(INC_CATS),...Object.entries(EXP_CATS)].filter((v,i,a)=>a.findIndex(x=>x[0]===v[0])===i),F.ledger.cat,'All categories')}</select><select data-f="ledger.b">${bOpts(F.ledger.b,'All buildings')}</select>
+ <div class="seg sm">${PRE.map(([k,l])=>`<button class="${F.ledger.pre===k?'on':''}" data-act="ledPre" data-k="${k}">${l}</button>`).join('')}</div><input type="date" data-f="ledger.from" value="${F.ledger.from}" aria-label="From"><span class="muted">→</span><input type="date" data-f="ledger.to" value="${F.ledger.to}" aria-label="To"><label class="btn sm" style="white-space:nowrap"><input type="checkbox" ${F.ledger.run?'checked':''} data-act-change="" onchange="actions.ledRun()"> Running balance</label></div><div id="tbl"></div>`;
+window.ledgerRows=function(){const f=F.ledger,q=(f.q||'').toLowerCase();
+  return D.entries.filter(e=>(!f.kind||e.kind===f.kind)&&(!f.cat||e.cat===f.cat)&&(!f.b||e.building===f.b)&&(!f.from||e.date>=f.from)&&(!f.to||e.date<=f.to)&&(!q||((e.desc||'')+' '+(e.unitLabel||'')+' '+(e.ref||'')+' '+(e.payer||'')+' '+(partnerById(e.partnerId)?.short||'')).toLowerCase().includes(q))).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)};
+const MODEC=m=>/cheque/i.test(m)?'violet':/cash/i.test(m)?'amber':/transfer|bank/i.test(m)?'blue':'gray';
+const KIND={income:['Money in','green'],expense:['Expense','red'],payout:['Payout','blue']};
+window._draw.ledger=()=>{
+  const L=ledgerRows(),ok=e=>e.status!=='pending',tin=r2(L.filter(e=>e.kind==='income'&&ok(e)).reduce((s,e)=>s+e.amount,0)),tex=r2(L.filter(e=>e.kind==='expense').reduce((s,e)=>s+e.amount,0)),tpo=r2(L.filter(e=>e.kind==='payout').reduce((s,e)=>s+e.amount,0));
+  $('#kpis').innerHTML=`<div class="kpis4"><div class="k4 in"><span>Total in</span><b class="pos">AED ${money(tin,2)}</b></div><div class="k4 out"><span>Expenses</span><b>AED ${money(tex,2)}</b></div><div class="k4 po"><span>Partner payouts</span><b>AED ${money(tpo,2)}</b></div><div class="k4 net"><span>Net ledger balance</span><b>AED ${money(r2(tin-tex-tpo),2)}</b></div></div>`;
+  let bal=0;const bm={};if(F.ledger.run){[...L].reverse().forEach(e=>{if(ok(e))bal=r2(bal+(e.kind==='income'?e.amount:-e.amount));bm[e.id]=bal})}
+  const S=L.slice(0,400);
+  $('#tbl').innerHTML=`<div class="muted xs" style="margin-bottom:8px">${L.length} entries</div><div class="tcard"><div class="tscroll"><table><thead><tr><th>Date</th><th>Type</th><th>Flat</th><th>Description</th><th>Mode</th><th>Ref</th><th class="num">In</th><th class="num">Out</th>${F.ledger.run?'<th class="num">Balance</th>':''}<th></th></tr></thead><tbody>${S.map(e=>{const k=KIND[e.kind]||['','gray'];const fl=e.building||e.unitLabel?`<span class="fb">${esc(bshort(e.building))}${e.unitLabel?' · '+esc(e.unitLabel):''}</span>`:'';
+   return `<tr class="${e.status==='pending'?'pend':''}"><td class="nw">${fdt(e.date)}</td><td>${pillOf(catName(e),k[1])}${e.status==='pending'?' '+pillOf('pending','amber'):''}${e.prior?' <span class="muted xs">prior</span>':''}</td><td>${fl}</td>
+   <td>${esc(e.kind==='payout'?(partnerById(e.partnerId)?.short||'')+' – ':'')}${esc(e.desc||'')}${e.instNo?' <span class="muted xs">#'+e.instNo+'</span>':''}${e.file?` <button class="x-att" style="border:0;background:#f1f5f9;border-radius:8px;padding:3px 6px;cursor:pointer;vertical-align:middle" data-act="ledAtt" data-id="${e.id}" aria-label="View attachment">${I('file',14)}</button>`:''}</td>
+   <td>${e.mode?pillOf(e.mode,MODEC(e.mode)):''}</td><td class="xs">${esc(e.ref||'')}</td><td class="num pos">${e.kind==='income'?'+'+money(e.amount):''}</td><td class="num neg">${e.kind!=='income'?'−'+money(e.amount):''}</td>${F.ledger.run?`<td class="num">${money(bm[e.id])}</td>`:''}<td class="num"><button class="btn sm" data-act="editEntry" data-id="${e.id}">Edit</button></td></tr>`}).join('')}</tbody></table></div></div>${L.length>400?'<p class="muted">Showing 400 most recent – narrow the filters.</p>':''}`;
+};
+actions.ledAtt=async d=>{const e=D.entries.find(x=>x.id===d.id);if(!e||!e.file)return;
+  try{const b=await blobOf(e.file.path,e.file.name);if(!b)throw new Error('file not found');const t=b.type||(/pdf$/i.test(e.file.name)?'application/pdf':'image/jpeg'),u=URL.createObjectURL(new Blob([b],{type:t}));
+   $('#drawer').innerHTML=`<div class="dhd"><div><b>${esc(e.file.name.replace(/^\d+-/,''))}</b><div class="muted xs">AED ${money(e.amount)} · ${fd(e.date)}</div></div><button class="x" data-act="closeDrawer" aria-label="Close">×</button></div><div class="dbd" style="padding:0;flex:1">${t==='application/pdf'?`<iframe src="${u}" style="width:100%;height:100%;border:0"></iframe>`:`<img src="${u}" style="width:100%" alt="">`}</div>`;$('#drawer').classList.add('open');
+   window._attOpen=1}catch(err){toast('Could not open file: '+err.message,'err')}};
+})();

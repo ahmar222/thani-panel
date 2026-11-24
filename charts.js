@@ -73,12 +73,44 @@ const ILL={
   check:'<svg viewBox="0 0 120 90"><g class="bob"><circle cx="60" cy="42" r="30" fill="#dff3e6"/><path d="M45 43 l11 11 l21 -24" fill="none" stroke="#0b7a3b" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g><ellipse cx="60" cy="80" rx="30" ry="5" fill="#e6dfe5"/></svg>',
   building:'<svg viewBox="0 0 120 90"><g class="bob"><rect x="30" y="14" width="60" height="62" rx="6" fill="#f1e8ef" stroke="#5e2750" stroke-width="5"/><g fill="#e95420"><rect x="40" y="26" width="12" height="12" rx="2"/><rect x="68" y="26" width="12" height="12" rx="2"/><rect x="40" y="48" width="12" height="12" rx="2"/></g><rect x="66" y="50" width="14" height="26" rx="2" fill="#5e2750"/></g></svg>'
 };
-/* 3dicons (CC0) - loaded from their public CDN; falls back to the drawn SVG if it can't load */
-const I3_IK='https://ik.imagekit.io/3dicons/tr:w-256,h-256/v1/',I3_DO='https://3dicons.sgp1.cdn.digitaloceanspaces.com/v1/';
-const i3=(name,cls='',alt='')=>{const p=`iso/color/${name}-iso-color.png`;return `<img class="i3d ${cls}" src="${I3_IK}${p}" data-p="${p}" data-k="${cls}" alt="${alt}" loading="lazy" decoding="async" onerror="i3err(this)">`};
-function i3err(el){if(!el.dataset.f){el.dataset.f=1;el.src=I3_DO+el.dataset.p}else el.remove()}
-const I3K={keys:'map-pin',inbox:'file-text',check:'tick',building:'map-pin'};
-const empty=(kind,text)=>`<div class="empty"><div class="eimg">${ILL[kind]||''}${I3K[kind]?`<img class="i3d big bob" src="${I3_IK}iso/color/${I3K[kind]}-iso-color.png" alt="" loading="lazy" onload="this.parentNode.firstChild.style.display='none'" onerror="this.remove()">`:''}</div><div>${text}</div></div>`;
+/* vector line icons (Lucide-style, 24px, 2px stroke) */
+const LUC={
+ wallet:'<path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/><path d="M21 12h-5a2 2 0 0 0 0 4h5z"/>',
+ calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+ chart:'<path d="M3 3v18h18"/><path d="M7 16v-5M12 16V7M17 16v-3"/>',
+ bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+ clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+ file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>',
+ cash:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+ building:'<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
+ check:'<circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/>',
+ pin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+ inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11"/>',
+ key:'<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3"/>',
+ scan:'<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>',
+ upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/>',
+ search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+ info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ x:'<path d="M18 6 6 18M6 6l12 12"/>',
+ alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/>',
+ home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+ users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+ grid:'<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+ book:'<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>',
+ bank:'<path d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M2 10l10-7 10 7"/>',
+ pie:'<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+ wrench:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/>',
+ sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+ menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+ print:'<path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+ logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>'
+};
+const svgi=(n,s=20,w=2)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${LUC[n]||''}</svg>`;
+const I3MAP={'money-bag':'wallet','calender':'calendar','chart':'chart','bell':'bell','clock':'clock','file-text':'file','wallet':'wallet','money':'cash','key':'building','tick':'check','map-pin':'pin'};
+const i3=(name,cls='')=>`<span class="lic ${cls}">${svgi(I3MAP[name]||name,cls.includes('hero-i')?28:cls.includes('sm')?20:24,1.8)}</span>`;
+const EMP={keys:'building',inbox:'inbox',check:'check',building:'building'};
+const empty=(kind,text)=>`<div class="empty"><span class="elic">${svgi(EMP[kind]||'check',34,1.6)}</span><div>${text}</div></div>`;
 
 /* phones: turn every table into stacked cards (CSS does the rest at <=860px) */
 function mobilize(root=document){
@@ -88,3 +120,23 @@ function mobilize(root=document){
     t.querySelectorAll('tbody tr').forEach(tr=>{[...tr.children].forEach((td,k)=>{if(td.tagName==='TD'&&!td.hasAttribute('data-l'))td.setAttribute('data-l',heads[k]||'')})});
   });
 }
+
+/* single segmented ring: rounded caps, 2px gaps, clickable */
+donut=function(segs,{size=170,center='',sub='',thick=20,active=''}={}){
+  const live=segs.filter(x=>x.v>0),tot=live.reduce((s,x)=>s+x.v,0)||1,R=(size-thick-6)/2,C=2*Math.PI*R,cx=size/2;let off=0;
+  const arcs=live.map(x=>{
+    const L=x.v/tot*C,single=live.length===1,vis=single?C:Math.max(.1,L-thick-2),st=single?0:off+thick/2+1,on=active===x.key,dim=active&&!on;
+    const e=`<circle class="arc ${on?'on':''}" cx="${cx}" cy="${cx}" r="${R}" fill="none" stroke="${x.color}" stroke-width="${on?thick+4:thick}" stroke-linecap="${single?'butt':'round'}" stroke-dasharray="${vis} ${C}" stroke-dashoffset="${-st}" transform="rotate(-90 ${cx} ${cx})" opacity="${dim?.28:1}" data-act="flatFilter" data-s="${x.key||''}" data-tip="${esc(x.label)}: ${x.v}" tabindex="0" role="button" aria-label="${esc(x.label)} ${x.v}"/>`;off+=L;return e}).join('');
+  return `<svg class="chart donut" style="width:${size}px;height:${size}px;flex:none" viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(center+' '+sub)}">${arcs}
+   <text x="${cx}" y="${cx+(sub?2:10)}" text-anchor="middle" font-size="${size*.24}" font-weight="700" fill="${COL.ink}">${esc(center)}</text>${sub?`<text x="${cx}" y="${cx+size*.15}" text-anchor="middle" font-size="${size*.085}" fill="${COL.mut}">${esc(sub)}</text>`:''}</svg>`;
+};
+/* sparkline with axis labels and hover points */
+spark=function(vals,color='#fff',{w=360,h=120,tips=[],xl=[],fmt=v=>kfmt(v)}={}){
+  if(vals.length<2)return '';const mn=Math.min(...vals),mx=Math.max(...vals),rng=mx-mn||1,L=38,B=20,T=8,pw=w-L-8,ph=h-B-T;
+  const xs=k=>L+k*pw/(vals.length-1),ys=v=>T+ph-(v-mn)/rng*ph;
+  const d=vals.map((v,k)=>(k?'L':'M')+xs(k).toFixed(1)+' '+ys(v).toFixed(1)).join('');
+  const pts=vals.map((v,k)=>`<g class="pt"><circle class="hit" cx="${xs(k)}" cy="${ys(v)}" r="13" fill="transparent" data-tip="${esc(tips[k]||'')}"/><circle class="dot" cx="${xs(k)}" cy="${ys(v)}" r="4.5" fill="${color}" stroke="rgba(0,0,0,.35)" stroke-width="2"/></g>`).join('');
+  const gl=[mn,(mn+mx)/2,mx].map(v=>`<line x1="${L}" x2="${w-8}" y1="${ys(v)}" y2="${ys(v)}" stroke="rgba(255,255,255,.14)" stroke-dasharray="3 4"/><text x="${L-6}" y="${ys(v)+4}" text-anchor="end" font-size="11" fill="rgba(255,255,255,.65)">${fmt(v)}</text>`).join('');
+  const xt=[0,Math.floor((vals.length-1)/2),vals.length-1].map((k,i)=>`<text x="${xs(k)}" y="${h-4}" text-anchor="${i==0?'start':i==2?'end':'middle'}" font-size="11" fill="rgba(255,255,255,.65)">${xl[k]||''}</text>`).join('');
+  return `<svg class="chart spk" viewBox="0 0 ${w} ${h}" role="img" aria-label="Bank balance trend">${gl}<path d="${d} L${xs(vals.length-1)} ${T+ph} L${xs(0)} ${T+ph} Z" fill="${color}" opacity=".14"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${xt}${pts}</svg>`;
+};

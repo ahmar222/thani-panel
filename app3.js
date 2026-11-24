@@ -86,7 +86,7 @@ const _ot=overdueTable;overdueTable=(L,s)=>L.length?_ot(L,s):empty('check',s?'No
 
 /* ---------- tenants: map or list ---------- */
 F.tenants.view=F.tenants.view||'map';
-const _tenOld=PAGES.tenants,_drawOld=window._draw.tenants;
+const _tenOld=PAGES.tenants,_drawOld=window._draw.tenants;window._tenOld=_tenOld;window._tenDrawOld=_drawOld;
 PAGES.tenants=()=>{
   const f=F.tenants;if(f.view==='list'){return _tenOld().replace('<div class="ph"><h2>Tenants</h2>',`<div class="ph"><div><h2>Tenants</h2><div class="sub">${segHtml()}</div></div>`)}
   const st=unitStates(),vac=st.filter(s=>!s.t).length;

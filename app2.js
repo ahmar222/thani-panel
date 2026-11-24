@@ -207,7 +207,7 @@ window.restoreBackup=inp=>{const f=inp.files[0];if(!f)return;f.text().then(t=>{t
 
 /* ---------- boot / login ---------- */
 function migrate(){D.bankStmt=D.bankStmt||null;D.lateFees=D.lateFees||[];D.contracts=D.contracts||[];D.staff=D.staff||[];D.files=D.files||[];D.units=D.units||[];D.settings.tol??=10}
-function showApp(){$('#login').hidden=true;$('#app').hidden=false;$('#whoami').textContent=MODE==='cloud'?(GHC.email||''):'local mode';$('#signout').hidden=MODE!=='cloud';migrate();if(!location.hash)location.hash='#/dashboard';refresh();setSync(MODE==='cloud'?'ok':'local')}
+function showApp(){$('#login').hidden=true;$('#app').hidden=false;$('#whoami').textContent=MODE==='cloud'?(GHC.email||''):'local mode';$('#avatar').textContent=((MODE==='cloud'?GHC.email:'T')||'T').trim()[0].toUpperCase();$('#signout').hidden=MODE!=='cloud';migrate();if(!location.hash)location.hash='#/dashboard';refresh();setSync(MODE==='cloud'?'ok':'local')}
 actions.signout=()=>{localStorage.removeItem(LS_CRED);sessionStorage.removeItem(LS_CRED);localStorage.removeItem(LS_DATA);location.reload()};
 async function connect(cfg){
   GHC=cfg;MODE='cloud';

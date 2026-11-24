@@ -62,10 +62,10 @@ PAGES.bank=()=>{
    <div class="tile hero s6"><span class="glow"></span>${i3('wallet','hero-i bob')}<div class="cap">Bank balance on ${fd(st.to)}</div><div class="big-n"><small>AED</small>${cn(st.closing,2)}</div><div class="cap" style="margin-top:6px">${fd(st.from)} → ${fd(st.to)} · ${st.txns.length} transactions · uploaded ${fdt(st.uploaded)}</div>
      <div class="row" style="margin-top:10px">${st.file?`<button class="btn ghost-w" data-act="openFile" data-p="${esc(st.file.path)}" data-n="${esc(st.file.name)}">Open PDF</button>`:''}</div></div>
    <div class="tile s3 half"><div class="cap">Books say</div><div class="mid-n"><small>AED</small>${cn(X.booksTo,2)}</div><div class="cap">same date</div></div>
-   <div class="tile s3 half ${ok?'':'alert'}"><div class="cap">Difference</div><div class="mid-n ${ok?'ok':'bad'}">${ok?'None':aed(X.diff)}</div><div class="cap">${ok?'Books match the bank':X.diff>0?'Bank has more than the books':'Books have more than the bank'}</div></div>
+   <div class="tile s3 half ${ok?'':'alert'}"><div class="cap">Difference</div><div class="mid-n ${ok?'ok':'bad'}">${ok?'None':aed2(X.diff)}</div><div class="cap">${ok?'Books match the bank':X.diff>0?'Bank has more than the books':'Books have more than the bank'}</div></div>
    <div class="tile s12"><div class="row between"><div><h3>${X.matched.length} of ${X.B.length} bank lines are in your books</h3><div class="cap">${X.pend.length} more are in your waiting list · ${X.bankOnly.length} missing from the books · ${X.booksOnly.length} in the books but not at the bank</div></div>
-     <div class="row"><button class="btn primary" data-act="bkVerify">Save ${aed(st.closing)} as the verified balance</button>${ok?'':'<button class="btn" data-act="bkFixOpening">Make books match the bank…</button>'}</div></div>
-     ${X.openDiff!=null&&Math.abs(X.openDiff)>0.015?`<div class="note amber" style="margin-top:12px">The books and the bank already differed on ${fd(st.openingDate)} (bank ${aed(st.opening)}, books ${aed(X.booksOpen)}). That starting difference of <b>${aed(X.openDiff)}</b> carries into everything after.</div>`:''}</div>
+     <div class="row"><button class="btn primary" data-act="bkVerify">Save ${aed2(st.closing)} as the verified balance</button>${ok?'':'<button class="btn" data-act="bkFixOpening">Make books match the bank…</button>'}</div></div>
+     ${X.openDiff!=null&&Math.abs(X.openDiff)>0.015?`<div class="note amber" style="margin-top:12px">The books and the bank already differed on ${fd(st.openingDate)} (bank ${aed2(st.opening)}, books ${aed2(X.booksOpen)}). That starting difference of <b>${aed2(X.openDiff)}</b> carries into everything after.</div>`:''}</div>
   </div>
   <section class="card"><div class="row between"><h3>In the bank, missing from the books · money in (${missCr.length})</h3>${missCr.length>1?'<button class="btn sm" data-act="bkAddAll">Add all to receipts</button>':''}</div>
    ${missCr.length?`<div class="scroll"><table class="tbl"><thead><tr><th>Date</th><th>Bank description</th><th class="num">Amount</th><th></th></tr></thead><tbody>${missCr.map(row).join('')}</tbody></table></div>`:empty('check','Every deposit is in your books')}</section>
@@ -85,14 +85,14 @@ actions.bkAddCredit=d=>{const t=D.bankStmt.txns[+d.i];addCredit(t);save();toast(
 function addCredit(t){
   D.entries.push({id:uid('e'),status:'pending',kind:'income',cat:'rent',date:t.date,amount:t.amount,ref:t.ref||'',mode:/SDM|CDM|ATM|CASH/i.test(t.desc)?'cash deposit':'bank transfer',payer:t.from||'',building:null,desc:(t.from?'From '+t.from:t.desc.slice(0,70)),hint:'From the bank statement – choose the flat it was for.'});
 }
-actions.bkAddAll=()=>{const X=crossCheck(D.bankStmt),L=X.bankOnly.filter(b=>b.t.type==='credit');confirmBox(`Add ${L.length} deposits (${aed(L.reduce((s,b)=>s+b.t.amount,0))}) to your receipts waiting list? You then choose the flat for each.`,()=>{L.forEach(b=>addCredit(b.t));save();toast(L.length+' added','ok')},'Add all')};
+actions.bkAddAll=()=>{const X=crossCheck(D.bankStmt),L=X.bankOnly.filter(b=>b.t.type==='credit');confirmBox(`Add ${L.length} deposits (${aed2(L.reduce((s,b)=>s+b.t.amount,0))}) to your receipts waiting list? You then choose the flat for each.`,()=>{L.forEach(b=>addCredit(b.t));save();toast(L.length+' added','ok')},'Add all')};
 actions.bkAddDebit=d=>{const t=D.bankStmt.txns[+d.i];openEntry(null,{kind:'expense',cat:'other',date:t.date,amount:t.amount,desc:t.desc.slice(0,90),ref:t.ref||''})};
 actions.bkPayout=d=>{const t=D.bankStmt.txns[+d.i],p=partnerById(d.p);
-  confirmBox(`Record ${aed(t.amount)} on ${fd(t.date)} as a payout to <b>${esc(p.short)}</b>?`,()=>{D.entries.push({id:uid('e'),kind:'payout',cat:'payout',date:t.date,amount:t.amount,partnerId:p.id,desc:'transfer to '+p.short.toLowerCase()+' (bank statement)',mode:'bank transfer',ref:t.ref||'',status:'posted',building:null});save();toast('Payout recorded','ok')},'Record payout')};
+  confirmBox(`Record ${aed2(t.amount)} on ${fd(t.date)} as a payout to <b>${esc(p.short)}</b>?`,()=>{D.entries.push({id:uid('e'),kind:'payout',cat:'payout',date:t.date,amount:t.amount,partnerId:p.id,desc:'transfer to '+p.short.toLowerCase()+' (bank statement)',mode:'bank transfer',ref:t.ref||'',status:'posted',building:null});save();toast('Payout recorded','ok')},'Record payout')};
 actions.bkVerify=()=>{const st=D.bankStmt;D.settings.lastVerified={date:st.to,balance:st.closing};save();toast('Verified balance saved','ok')};
 actions.bkFixOpening=()=>{
   const st=D.bankStmt,X=crossCheck(st);
-  confirmBox(`Books are <b>${aed(X.diff)}</b> ${X.diff>0?'below':'above'} the bank on ${fd(st.to)}. This changes the opening cash by that amount so the books equal the bank. Best done <b>after</b> adding the missing items above. Continue?`,()=>{
+  confirmBox(`Books are <b>${aed2(X.diff)}</b> ${X.diff>0?'below':'above'} the bank on ${fd(st.to)}. This changes the opening cash by that amount so the books equal the bank. Best done <b>after</b> adding the missing items above. Continue?`,()=>{
     D.settings.openingCash=r2(D.settings.openingCash+X.diff);D.settings.lastVerified={date:st.to,balance:st.closing};save();toast('Opening cash adjusted – books now match the bank','ok')},'Adjust opening cash');
 };
 /* upload */

@@ -3,7 +3,8 @@ const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelect
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const r2=x=>Math.round((Number(x)||0)*100+(x<0?-1e-9:1e-9))/100;
 const money=(n,d=2)=>(n==null||isNaN(n))?'—':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
-const aed=n=>'AED '+money(n);
+const aed=n=>'AED '+money(n,0);
+const aed2=n=>'AED '+money(n,2);
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const fd=s=>{if(!s)return '—';const [y,m,d]=s.split('-');return `${+d} ${MON[+m-1]} ${y}`};
 const fdt=s=>{if(!s)return '—';const [y,m,d]=s.split('-');return `${+d} ${MON[+m-1]} ${String(y).slice(2)}`};
@@ -35,7 +36,7 @@ async function decryptCfg(pw,email){
 /* ---------- state ---------- */
 let D=null, MODE='local', GHC=null, GHSHA=null, SYNC={state:'idle',msg:''}, _saveT=null, _pushing=false, _again=false;
 const LS_DATA='thani_data_v1', LS_CRED='thani_cred_v1';
-const setSync=(state,msg)=>{SYNC={state,msg:msg||''};const e=$('#syncchip');if(e){e.className='chip '+({ok:'green',busy:'amber',err:'red',idle:'',local:'blue'}[state]||'');e.textContent=({ok:'Saved to cloud',busy:'Saving…',err:'Not saved – '+msg,idle:'',local:'Local only'}[state])}};
+const setSync=(state,msg)=>{SYNC={state,msg:msg||'',at:state==='ok'?Date.now():(SYNC&&SYNC.at)||null};const e=$('#syncchip');if(e){const col={ok:'ok',busy:'busy',err:'err',idle:'idle',local:'local'}[state]||'idle';const hm=SYNC.at?new Date(SYNC.at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';e.className='sync '+col;e.innerHTML='<i class="dot"></i><span>'+({ok:'Synced '+hm,busy:'Saving…',err:'Not saved – '+esc(msg||''),idle:'',local:'Local only'}[state])+'</span>'}};
 function save(){
   D.rev=(D.rev||0)+1;
   try{localStorage.setItem(LS_DATA,JSON.stringify({dirty:MODE==='cloud',d:D}))}catch(e){}
