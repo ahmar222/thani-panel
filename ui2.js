@@ -129,6 +129,22 @@ function attention(A){
 function pbars(C){
   const L=C.partners.slice().sort((a,b)=>b.owed-a.owed),mx=Math.max(1,...L.map(x=>Math.abs(x.owed)));
   return `<div class="pbars">${L.map(x=>`<div class="pb" data-tip="${esc(x.p.name)}\nShare ${(x.share*100).toFixed(2)}%"><div class="pn"><span>${esc(x.p.short)} <em>${(x.share*100).toFixed(1)}%</em></span><b>AED ${money(x.owed,0)}</b></div><div class="trk"><i style="width:${Math.max(0,x.owed)/mx*100}%"></i></div></div>`).join('')}<div class="ptot"><span>Total owed</span><b>AED ${money(C.owedTotal,0)}</b></div></div>`}
+
+function rampCard(){
+  const T=D.tenancies.filter(t=>t.units&&t.units.length&&t.start);if(!T.length)return '';
+  const first=T.map(t=>t.start).sort()[0].slice(0,7),cur=TODAY.slice(0,7),N=D.units.length;const rows=[];
+  for(let m=first;m<=cur;m=addMonths(m+'-01',1).slice(0,7)){const ref=m===cur?TODAY:addDays(addMonths(m+'-01',1),-1);
+    const live=T.filter(t=>t.start<=ref&&(t.end>=ref)&&!(t.endedOn&&t.endedOn<=ref)&&!(t.vacatedOn&&t.vacatedOn<=ref));
+    const let_=live.reduce((s,t)=>s+t.units.length,0),rent=Math.round(live.reduce((s,t)=>s+(t.annual||0)/12,0));
+    const got=r2(D.entries.filter(e=>e.kind==='income'&&e.cat==='rent'&&e.status!=='pending'&&e.date.slice(0,7)===m).reduce((s,e)=>s+e.amount,0));
+    rows.push({m,let_,rent,got})}
+  const last=rows[rows.length-1],mx=Math.max(1,...rows.map(r=>Math.max(r.rent,r.got))),full=rows.find(r=>r.rent>=last.rent*.7);
+  const t12=rows.slice(-12),rcv=r2(t12.reduce((s,r)=>s+r.got,0)),run=last.rent*12;
+  return `<div class="tile s12 noprint"><div class="row between"><div><h3>Rent ramp-up</h3><div class="cap">${full?`Rent has been at 70% or more of today's level since <b>${ml(full.m)} ${full.m.slice(0,4)}</b>. Before that the buildings were mostly empty (renovation / first lettings).`:''}</div></div></div>
+   <div class="kpis4" style="margin:14px 0"><div class="k4"><span>Flats let now</span><b>${last.let_} of ${N}</b></div><div class="k4"><span>Contracted rent / month</span><b>AED ${money(last.rent,0)}</b></div><div class="k4"><span>Received, last 12 months</span><b>AED ${money(rcv,0)}</b></div><div class="k4"><span>Today's contracts, per year</span><b>AED ${money(run,0)}</b></div></div>
+   <div class="tcard"><div class="tscroll"><table><thead><tr><th>Month</th><th class="num">Flats let</th><th class="num">Contracted rent</th><th class="num">Rent received</th><th>Rent level</th></tr></thead><tbody>${rows.map(r=>`<tr><td class="nw"><b>${ml(r.m)} ${r.m.slice(0,4)}</b></td><td class="num">${r.let_} / ${N}</td><td class="num">AED ${money(r.rent,0)}</td><td class="num">AED ${money(r.got,0)}</td><td style="min-width:160px"><div class="trk"><i style="width:${r.rent/mx*100}%;${full&&r.m>=full.m?'':'background:#cbd5e1'}"></i></div></td></tr>`).join('')}</tbody></table></div></div>
+   <p class="muted xs" style="margin-top:8px">Contracted rent = yearly rent of every contract running that month ÷ 12. Rent received = rent payments recorded in the ledger that month (cheques land in different months, so it moves up and down).</p></div>`;
+}
 PAGES.dashboard=()=>{
   const C=CC,S=D.settings,A=alerts(C),v=S.lastVerified,states=unitStates(C),ser12=series12(),f=F.dash;
   const vc=v?cashAsOf(v.date):null,vok=v&&Math.abs(vc-v.balance)<0.015;
@@ -160,6 +176,7 @@ PAGES.dashboard=()=>{
    <div class="tile s7 noprint">${bdg('bell','red')}<h3>Needs attention</h3>${attention(A)}</div>
    <div class="tile s5"><div class="row between"><h3>Each partner is owed</h3><a class="sa2" href="#/partners">Details ›</a></div>${pbars(C)}</div>
 
+   ${rampCard()}
    <div class="tile s12 noprint"><div class="row between"><div><h3>Your buildings</h3><div class="cap">${f.unit?`Showing ${STC[f.unit].toLowerCase()} flats – `:''}${f.unit?'<a href="#" data-act="flatFilter" data-s="'+f.unit+'">clear filter</a>':'Tap a flat for details'}</div></div><a class="sa2" href="#/flats">Open Flats ›</a></div><div style="margin-top:14px">${D.buildings.map(b=>unitMap(b.id,states,f.unit)).join('')}</div></div>
 
    <div class="tile s7 noprint"><div class="row between"><h3>Overdue cheques</h3><a class="sa2" href="#/overdue">All &amp; penalties ›</a></div>${overdueTable(C.overdue.slice(0,6))}${arrAmt>0?`<div class="note red" style="margin-top:10px">Ex-tenants still owe <b>${aed(arrAmt)}</b> (${C.arrears.length} cheque(s))</div>`:''}</div>

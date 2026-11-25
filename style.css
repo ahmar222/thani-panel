@@ -419,3 +419,4 @@ main{padding-bottom:110px}
  .tcard tr:hover td{background:none}
 }
 .card .tscroll{max-height:none}
+.tcard td .trk{flex:1;min-width:120px}
