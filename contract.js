@@ -44,7 +44,7 @@ PAGES.contracts=()=>{
   const unitRows=allUnits().map(u=>{const t=current(u.b,u.no),i=unitInfo(u.b,u.no);
     return `<tr><td><b>${esc(bshort(u.b))} ${esc(u.no)}</b></td><td>${esc(i.ptype)}${i.area?' · '+esc(i.area)+' m2':''}</td><td class="xs">${i.dewa?esc(i.dewa):'<span class="muted">add DEWA no.</span>'}</td><td>${t?esc(t.tenant)+' <span class="muted xs">till '+fd(t.end)+'</span>':'<span class="muted">Vacant</span>'}</td><td class="num nowrap">${t?`<button class="btn sm" data-act="contractNew" data-id="${t.id}" data-mode="renew">Renew</button> `:''}<button class="btn sm" data-act="contractNew" data-b="${u.b}" data-u="${esc(u.no)}" data-mode="new">New tenant</button> <button class="btn sm" data-act="unitEj" data-b="${u.b}" data-u="${esc(u.no)}">Details</button></td></tr>`}).join('');
   const log=D.contractDocs.slice(-8).reverse().map(c=>`<tr><td>${esc(c.no)}</td><td>${esc(bshort(c.building))} ${esc(c.unit)}</td><td>${esc(c.tenant)}</td><td>${fd(c.start)} - ${fd(c.end)}</td><td class="num">${money(c.annual)}</td><td class="xs">${fd(c.date)}</td></tr>`).join('');
-  return `<div class="ph"><div><h2>Tenancy contracts</h2><p class="muted">One click makes the Ejari form and addendum: details filled in, signed and stamped.</p></div></div>
+  return `<div class="ph"><div><h2>Tenancy contracts</h2><p class="muted">One click makes the Ejari form and addendum: details filled in, signed.</p></div></div>
   <section class="card"><h3>Due for renewal</h3>${dueRows?`<div class="scroll"><table class="tbl"><thead><tr><th>Flat</th><th>Tenant</th><th>Ends</th><th class="num">Rent</th><th></th></tr></thead><tbody>${dueRows}</tbody></table></div>`:'<p class="muted">No contract ends in the next 120 days.</p>'}</section>
   <section class="card"><h3>All flats</h3><div class="scroll"><table class="tbl"><thead><tr><th>Flat</th><th>Type</th><th>DEWA premises</th><th>Tenant</th><th></th></tr></thead><tbody>${unitRows}</tbody></table></div></section>
   ${log?`<section class="card"><h3>Recently generated</h3><div class="scroll"><table class="tbl"><thead><tr><th>No.</th><th>Flat</th><th>Tenant</th><th>Period</th><th class="num">Rent</th><th>Made on</th></tr></thead><tbody>${log}</tbody></table></div></section>`:''}`;
@@ -76,6 +76,8 @@ actions.contractNew=d=>{
   const comp=/\b(llc|l\.l\.c|est|trading|services|establishment|company|grocery)\b/i.test(e);
   modal({wide:1,title:renew?`Renew contract - ${esc(bshort(b))} ${esc(no)}`:`New tenant - ${esc(bshort(b))} ${esc(no)}`,body:`<form data-form="contractGen">
   <input type="hidden" name="b" value="${b}"><input type="hidden" name="u" value="${esc(no)}"><input type="hidden" name="mode" value="${renew?'renew':'new'}">
+  <h4 class="fh">Property</h4>
+  <div class="fg"><label class="wide2">DEWA premises no. (required - printed on the Ejari form)<input name="dewa" value="${esc(i.dewa)}" placeholder="e.g. 122-01584-3" required ${i.dewa?'':'autofocus'}></label></div>
   <h4 class="fh">Tenant</h4>
   <div class="fg"><label class="wide2">Full name (as on Emirates ID / trade licence)<input name="tenant" value="${esc(e)}" required></label>
   <label>Emirates ID<input name="eid" value="${esc(renew?(t.eid||''):'')}" placeholder="784-xxxx-xxxxxxx-x"></label>
@@ -93,8 +95,7 @@ actions.contractNew=d=>{
   <label>Contract date<input type="date" name="date" value="${TODAY}"></label></div>
   <details><summary>Property details (from Ejari - change if needed)</summary><div class="fg" style="margin-top:10px">
   <label>Property no.<input name="propNo" value="${esc(t&&t.units.length>1?t.units.join('+'):i.propNo)}"></label><label>Property type<input name="ptype" value="${esc(i.ptype)}"></label>
-  <label>Area (m2)<input name="area" value="${esc(i.area)}"></label><label>DEWA premises no.<input name="dewa" value="${esc(i.dewa)}"></label>
-  <label>Building name<input name="bname" value="${esc(i.bname)}"></label><label>Location<input name="loc" value="${esc(i.loc)}"></label>
+  <label>Area (m2)<input name="area" value="${esc(i.area)}"></label><label>Building name<input name="bname" value="${esc(i.bname)}"></label><label>Location<input name="loc" value="${esc(i.loc)}"></label>
   <label>Plot no.<input name="plot" value="${esc(i.plot)}"></label><label>Makani no.<input name="makani" value="${esc(i.makani)}"></label>
   <label>Parking spaces<input type="number" min="0" name="parking" value="${i.parking}"></label>
   <label>Max occupancy<input type="number" min="1" name="occ" value="${OCC[(i.ptype.match(/(\d)\s*BHK/i)||[])[1]]||5}"></label></div></details>
@@ -114,6 +115,8 @@ forms.contractGen=async f=>{
     start:g('start'),end:g('end'),annual:+g('annual')||0,deposit:+g('deposit')||0,n:+g('n')||1,pay:g('pay')||'Cheque',penalty:+g('penalty')||0,no:g('no')||nextNo(),date:g('date')||TODAY,
     propNo:g('propNo'),ptype:g('ptype'),area:g('area'),dewa:g('dewa'),bname:g('bname'),loc:g('loc'),plot:g('plot'),makani:g('makani'),parking:+g('parking')||0,occ:+g('occ')||5};
   c.commercial=/shop|office|commercial/i.test(c.ptype);c.sched=schedule(c);c.bank=window.landlordBank?landlordBank():{};
+  if(!c.dewa){toast('Enter the DEWA premises number','err');return}
+  {const id=c.b+':'+c.unit;let u=D.units.find(x=>x.id===id);if(!u){u={id,building:c.b,no:c.unit,type:''};D.units.push(u)}u.ej=Object.assign({},u.ej,{dewa:c.dewa})}
   if(!c.tenant||!c.start||!c.end||!c.annual){toast('Add the tenant name, dates and rent','err');return}
   const btn=document.querySelector('#modal button.primary');if(btn){btn.disabled=true;btn.textContent='Creating...'}
   try{
@@ -170,7 +173,7 @@ async function buildContract(c){
   T(p1,118,646,dmy(c.start));T(p1,208,646,dmy(c.end));T(p1,362,646,'AED '+num(c.annual),{max:120});
   T(p1,84,671,'AED '+num(c.annual),{max:190});T(p1,398,671,'AED '+num(c.deposit),{max:100});T(p1,104,693,`${c.pay}, ${c.n} per year`,{max:380});
   T(p1,202,803,dmy(c.date),{size:8});T(p1,474,803,dmy(c.date),{size:8});
-  const sg=(p,top)=>{if(sign)p.drawImage(sign,{x:395,y:H-(top+42),width:92,height:38});p.drawImage(stamp,{x:462,y:H-(top+58),width:58,height:58})};
+  const sg=(p,top)=>{if(sign)p.drawImage(sign,{x:420,y:H-(top+44),width:92,height:38});};
   sg(p1,738);
   /* page 3: additional terms */
   const wrap=(s,sz,w)=>{const wd=asc(s).split(' '),ls=[];let cur='';wd.forEach(x=>{const t=cur?cur+' '+x:x;if(font.widthOfTextAtSize(t,sz)>w&&cur){ls.push(cur);cur=x}else cur=t});if(cur)ls.push(cur);return ls};
@@ -255,7 +258,7 @@ async function addendum(c){
   room(150);y+=10;para('Signed by the Parties or their authorised representatives on the date of this Addendum.',{bold:1});y+=6;
   const sy=y;doc.setFont('helvetica','bold').setFontSize(9).setTextColor(...INK).text('Signed for and on behalf of LESSOR',M,sy).text('Signed for and on behalf of TENANT',M+CW/2+10,sy);
   doc.setFont('helvetica','normal').text(L.name,M,sy+14).text(doc.splitTextToSize(c.tenant,CW/2-14),M+CW/2+10,sy+14);
-  if(D.settings&&D.settings.signImg)doc.addImage(D.settings.signImg,'PNG',M+6,sy+22,100,42);doc.addImage(A.stamp,'PNG',M+104,sy+14,70,70);
+  if(D.settings&&D.settings.signImg)doc.addImage(D.settings.signImg,'PNG',M+6,sy+22,100,42);
   doc.setDrawColor(...MUT).setLineWidth(.6).line(M,sy+82,M+CW/2-14,sy+82).line(M+CW/2+10,sy+82,W-M,sy+82);
   doc.setFontSize(8).setTextColor(...MUT).text('Date: '+dmy(c.date),M,sy+94).text('Signature and date',M+CW/2+10,sy+94);
   const n=doc.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);doc.setFont('helvetica','normal').setFontSize(8).setTextColor(...MUT).text(`Addendum page ${i} of ${n}  |  ${asc(c.bname)} ${unit}`,W/2,H-30,{align:'center'})}
