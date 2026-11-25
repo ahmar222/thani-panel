@@ -40,9 +40,9 @@ PAGES.contracts=()=>{
   D.contractDocs=D.contractDocs||[];
   const act=(D.tenancies||[]).filter(t=>t.status==='active');
   const due=act.filter(soon).sort((a,b)=>a.end.localeCompare(b.end));
-  const dueRows=due.map(t=>{const d=daysBetween(TODAY,t.end);return `<tr><td><b>${esc(bshort(t.building))} ${esc(t.units.join('+'))}</b></td><td>${esc(t.tenant)}</td><td>${fd(t.end)} <span class="chip ${d<0?'red':'amber'}">${d<0?Math.abs(d)+' days ago':d+' days'}</span></td><td class="num">${money(t.annual)}</td><td class="num"><button class="btn primary sm" data-act="contractNew" data-id="${t.id}" data-mode="renew">Renew contract</button></td></tr>`}).join('');
+  const dueRows=due.map(t=>{const d=daysBetween(TODAY,t.end);return `<tr><td><b>${esc(bshort(t.building))} ${esc(t.units.join('+'))}</b></td><td>${esc(t.tenant)}</td><td>${fd(t.end)} <span class="chip ${d<0?'red':'amber'}">${d<0?Math.abs(d)+' days ago':d+' days'}</span></td><td class="num">${money(t.annual)}</td><td class="num"><button class="btn primary sm" data-act="contractNew" data-id="${t.id}" data-mode="renew">Renew contract</button> <button class="btn sm" data-act="nonRenew" data-id="${t.id}">Non-renewal letter</button></td></tr>`}).join('');
   const unitRows=allUnits().map(u=>{const t=current(u.b,u.no),i=unitInfo(u.b,u.no);
-    return `<tr><td><b>${esc(bshort(u.b))} ${esc(u.no)}</b></td><td>${esc(i.ptype)}${i.area?' · '+esc(i.area)+' m2':''}</td><td class="xs">${i.dewa?esc(i.dewa):'<span class="muted">add DEWA no.</span>'}</td><td>${t?esc(t.tenant)+' <span class="muted xs">till '+fd(t.end)+'</span>':'<span class="muted">Vacant</span>'}</td><td class="num nowrap">${t?`<button class="btn sm" data-act="contractNew" data-id="${t.id}" data-mode="renew">Renew</button> `:''}<button class="btn sm" data-act="contractNew" data-b="${u.b}" data-u="${esc(u.no)}" data-mode="new">New tenant</button> <button class="btn sm" data-act="unitEj" data-b="${u.b}" data-u="${esc(u.no)}">Details</button></td></tr>`}).join('');
+    return `<tr><td><b>${esc(bshort(u.b))} ${esc(u.no)}</b></td><td>${esc(i.ptype)}${i.area?' · '+esc(i.area)+' m2':''}</td><td class="xs">${i.dewa?esc(i.dewa):'<span class="muted">add DEWA no.</span>'}</td><td>${t?esc(t.tenant)+' <span class="muted xs">till '+fd(t.end)+'</span>':'<span class="muted">Vacant</span>'}</td><td class="num nowrap">${t?`<button class="btn sm" data-act="contractNew" data-id="${t.id}" data-mode="renew">Renew</button> <button class="btn sm" data-act="nonRenew" data-id="${t.id}">Non-renewal</button> `:''}<button class="btn sm" data-act="contractNew" data-b="${u.b}" data-u="${esc(u.no)}" data-mode="new">New tenant</button> <button class="btn sm" data-act="unitEj" data-b="${u.b}" data-u="${esc(u.no)}">Details</button></td></tr>`}).join('');
   const log=D.contractDocs.slice(-8).reverse().map(c=>`<tr><td>${esc(c.no)}</td><td>${esc(bshort(c.building))} ${esc(c.unit)}</td><td>${esc(c.tenant)}</td><td>${fd(c.start)} - ${fd(c.end)}</td><td class="num">${money(c.annual)}</td><td class="xs">${fd(c.date)}</td></tr>`).join('');
   return `<div class="ph"><div><h2>Tenancy contracts</h2><p class="muted">One click makes the Ejari form and addendum: details filled in, signed.</p></div></div>
   <section class="card"><h3>Due for renewal</h3>${dueRows?`<div class="scroll"><table class="tbl"><thead><tr><th>Flat</th><th>Tenant</th><th>Ends</th><th class="num">Rent</th><th></th></tr></thead><tbody>${dueRows}</tbody></table></div>`:'<p class="muted">No contract ends in the next 120 days.</p>'}</section>
@@ -134,7 +134,7 @@ actions.contractShare=async()=>{const n=window._contract;if(!n)return;
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Tenancy contract',text:'Tenancy contract - '+n.c.tenant});return}}catch(e){if(e&&e.name==='AbortError')return}
   const a=document.createElement('a');a.href=URL.createObjectURL(n.blob);a.download=n.name;a.click();
   let m=String(n.c.mobile||'').replace(/[^\d]/g,'');if(m.startsWith('00'))m=m.slice(2);else if(m.startsWith('0'))m='971'+m.slice(1);
-  window.open('https://wa.me/'+m+'?text='+encodeURIComponent('Dear '+n.c.tenant+', please find attached your tenancy contract for '+bshort(n.c.b)+' '+n.c.unit+'. Kindly sign and return a copy.'),'_blank');
+  window.open('https://wa.me/'+m+'?text='+encodeURIComponent(n.msg||('Dear '+n.c.tenant+', please find attached your tenancy contract for '+bshort(n.c.b)+' '+n.c.unit+'. Kindly sign and return a copy.')),'_blank');
   toast('PDF downloaded - attach it in the WhatsApp chat','ok')};
 
 /* ---------------- signature (kept in the private data file, never in the public site) ---------------- */
@@ -263,5 +263,48 @@ async function addendum(c){
   doc.setFontSize(8).setTextColor(...MUT).text('Date: '+dmy(c.date),M,sy+94).text('Signature and date',M+CW/2+10,sy+94);
   const n=doc.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);doc.setFont('helvetica','normal').setFontSize(8).setTextColor(...MUT).text(`Addendum page ${i} of ${n}  |  ${asc(c.bname)} ${unit}`,W/2,H-30,{align:'center'})}
   return doc.output('arraybuffer');
+}
+
+/* ---------------- non-renewal letter ---------------- */
+actions.nonRenew=d=>{const t=tenById(d.id);if(!t)return;const no=t.units.join('+');
+  modal({title:`Non-renewal letter - ${esc(bshort(t.building))} ${esc(no)}`,body:`<form data-form="nonRenew"><input type="hidden" name="id" value="${t.id}">
+  <p><b>${esc(t.tenant)}</b><br><span class="muted">Contract ends ${fd(t.end)}</span></p>
+  <div class="fg"><label>Letter date<input type="date" name="date" value="${TODAY}" required></label><label>Tenant must vacate by<input type="date" name="vacate" value="${t.end}" required></label>
+  <label class="wide2">Reason (optional, printed in the letter)<select name="why"><option value="">Do not state a reason</option><option value="The Landlord intends to use the property for personal or family use.">Own use / family use</option><option value="The Landlord intends to carry out renovation or maintenance of the property.">Renovation / maintenance</option><option value="The Landlord intends to sell the property.">Sale of the property</option><option value="Repeated late payment of rent during the tenancy.">Repeated late payment</option></select></label></div>
+  <div class="row end"><button type="button" class="btn" data-act="closeModal">Cancel</button><button class="btn primary">Create letter PDF</button></div></form>`})};
+forms.nonRenew=async f=>{
+  const t=tenById(f.get('id'));const btn=document.querySelector('#modal button.primary');if(btn){btn.disabled=true;btn.textContent='Creating...'}
+  try{await jsp();const c={t,date:f.get('date')||TODAY,vacate:f.get('vacate')||t.end,why:f.get('why')||''};
+    const blob=await buildNonRenew(c);(t.notices=t.notices||[]).push({date:c.date,type:'non-renewal'});save();
+    const name=`Non-renewal-letter_${bshort(t.building)}-${t.units.join('+')}_${c.date}.pdf`.replace(/\s+/g,'');
+    window._contract={blob,name,c:{tenant:t.tenant,mobile:t.mobile,b:t.building,unit:t.units.join('+')},msg:'Dear '+t.tenant+', please find attached the notice of non-renewal of your tenancy contract for '+bshort(t.building)+' '+t.units.join('+')+'.'};
+    const url=URL.createObjectURL(blob);
+    modal({wide:1,title:'Letter ready',body:`<div class="split"><iframe src="${url}"></iframe><div><p class="muted">Dated, signed and stamped. Send it straight to the tenant:</p><div class="dact"><button class="btn primary" data-act="contractShare">Send on WhatsApp</button><a class="btn" href="${url}" download="${name}">Download PDF</a><button class="btn" data-act="closeModal">Done</button></div></div></div>`});
+  }catch(e){console.error(e);toast(e.message||'Could not create the letter','err');if(btn){btn.disabled=false;btn.textContent='Create letter PDF'}}};
+async function buildNonRenew({t,date,vacate,why}){
+  const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'pt',format:'a4'}),W=595.28,H=841.89,M=62,CW=W-2*M,A=window.NOTICE_ASSETS;
+  const INK=[22,32,46],SL=[15,42,58],MUT=[100,110,122];let y=64;
+  doc.setFont('helvetica','bold').setFontSize(15).setTextColor(...SL).text('THANI AL THANI',M,y);doc.setFont('helvetica','normal').setFontSize(8).setTextColor(...MUT).text('REAL ESTATE MANAGEMENT  |  DUBAI',M,y+12);
+  doc.setFontSize(8.5).text(LL.email+'  |  '+LL.phone,W-M,y+12,{align:'right'});doc.setDrawColor(210,216,224).setLineWidth(.8).line(M,y+22,W-M,y+22);y+=58;
+  const P=(s,o={})=>{doc.setFont('helvetica',o.b?'bold':'normal').setFontSize(o.sz||10.5).setTextColor(...INK);const ls=doc.splitTextToSize(asc(s),CW-(o.ind||0));doc.text(ls,M+(o.ind||0),y,{lineHeightFactor:1.5});y+=ls.length*(o.sz||10.5)*1.5+(o.gap??8)};
+  const unit=t.units.join('+'),bn=(unitInfo(t.building,t.units[0])||{});
+  P('Date: '+longD(date),{gap:14});
+  P('To: '+t.tenant,{b:1,gap:2});P(`${bn.bname||''}, ${bshort(t.building)} - Flat ${unit}`,{gap:2});P('Dubai, United Arab Emirates',{gap:16});
+  P('NOTICE OF NON-RENEWAL OF TENANCY CONTRACT',{b:1,sz:12.5,gap:4});
+  const ref=[t.ejari&&t.ejari.contractNo?'Ejari contract no. '+t.ejari.contractNo:null,'Tenancy period '+longD(t.start)+' to '+longD(t.end)].filter(Boolean).join('  |  ');
+  P(ref,{sz:9.5,gap:16});
+  P('Dear '+t.tenant+',',{gap:10});
+  P(`This letter is to inform you, in line with the terms of your tenancy contract, that the Landlord does not intend to renew the tenancy contract for ${bn.ptype&&/shop/i.test(bn.ptype)?'the unit':'the flat'} mentioned above. The tenancy will end on ${longD(t.end)} and will not be extended or renewed.`,{gap:8});
+  if(why)P(asc(why),{gap:8});
+  P(`You are kindly requested to vacate and hand over the property to the Landlord on or before ${longD(vacate)}. Before leaving, please:`,{gap:6});
+  ['Clear all rent, penalties and other amounts due under the tenancy contract.','Pay all DEWA, cooling, telecom and other utility bills and show the final bills.','Paint the flat at your own expense and return it clean and as received, as agreed in the contract terms.','Return all keys and access cards to the Landlord or his representative.'].forEach((x,i)=>P((i+1)+'.  '+x,{ind:14,gap:4}));
+  y+=4;P('After the move-out inspection, your security deposit will be refunded after deduction of any amounts due, as set out in the contract. The Ejari registration for this tenancy will end with the contract.',{gap:8});
+  P('Thank you for your cooperation during the tenancy. We wish you all the best.',{gap:20});
+  P('Yours sincerely,',{gap:6});
+  const sy=y;if(D.settings&&D.settings.signImg)doc.addImage(D.settings.signImg,'PNG',M,sy,110,46);
+  doc.addImage(A.stamp,'PNG',M+120,sy-6,80,80);
+  y=sy+90;P(LL.name,{b:1,gap:2});P('Landlord',{sz:9.5,gap:2});
+  doc.setFont('helvetica','normal').setFontSize(8).setTextColor(...MUT).text('Ref: NRN-'+date.replace(/-/g,'')+'-'+unit.replace(/\W+/g,''),M,H-40);
+  return doc.output('blob');
 }
 })();
