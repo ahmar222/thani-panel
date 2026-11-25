@@ -166,19 +166,21 @@ PAGES.dashboard=()=>{
      <div class="frows">${SK.map(([k,l,c])=>`<button class="frow ${f.unit===k?'on':''}" data-act="flatFilter" data-s="${k}"><i style="background:${c}"></i><span>${l}</span><b>${cnt[k]}</b></button>`).join('')}</div></div></div>
    </div>
 
-   <div class="tile s12"><div class="row between"><div><h3>Money in and out</h3><div class="cap">Excluding the opening balance</div></div><div class="seg sm">${['6M','1Y','YTD'].map(r=>`<button class="${f.range===r?'on':''}" data-act="dashRange" data-r="${r}">${r}</button>`).join('')}</div></div>${bars12(rs)}</div>
-
-   <a class="tile s6 stat" href="#/overdue">${bdg('clock','red')}<div class="cap">Overdue cheques</div><div class="mid-n"><small>AED</small>${cn(odAmt)}</div><div class="cap">${C.overdue.length} cheque${C.overdue.length===1?'':'s'}</div></a>
-   <a class="tile s6 stat" href="#/cheques">${bdg('cash','green')}<div class="cap">Cheques in hand</div><div class="mid-n"><small>AED</small>${cn(C.chqHeld)}</div><div class="cap">${C.chqHeldN} cheque${C.chqHeldN===1?'':'s'} to come</div></a>
 
    <div class="tile s7 noprint">${bdg('bell','red')}<h3>Needs attention</h3>${attention(A)}</div>
    <div class="tile s5"><div class="row between"><h3>Each partner is owed</h3><a class="sa2" href="#/partners">Details ›</a></div>${pbars(C)}</div>
-
-   ${rampCard()}
-   <div class="tile s12 noprint"><div class="row between"><div><h3>Your buildings</h3><div class="cap">${f.unit?`Showing ${STC[f.unit].toLowerCase()} flats – `:''}${f.unit?'<a href="#" data-act="flatFilter" data-s="'+f.unit+'">clear filter</a>':'Tap a flat for details'}</div></div><a class="sa2" href="#/flats">Open Flats ›</a></div><div style="margin-top:14px">${D.buildings.map(b=>unitMap(b.id,states,f.unit)).join('')}</div></div>
-
+   <a class="tile s6 stat" href="#/overdue">${bdg('clock','red')}<div class="cap">Overdue cheques</div><div class="mid-n"><small>AED</small>${cn(odAmt)}</div><div class="cap">${C.overdue.length} cheque${C.overdue.length===1?'':'s'}</div></a>
+   <a class="tile s6 stat" href="#/cheques">${bdg('cash','green')}<div class="cap">Cheques in hand</div><div class="mid-n"><small>AED</small>${cn(C.chqHeld)}</div><div class="cap">${C.chqHeldN} cheque${C.chqHeldN===1?'':'s'} to come</div></a>
    <div class="tile s7 noprint"><div class="row between"><h3>Overdue cheques</h3><a class="sa2" href="#/overdue">All &amp; penalties ›</a></div>${overdueTable(C.overdue.slice(0,6))}${arrAmt>0?`<div class="note red" style="margin-top:10px">Ex-tenants still owe <b>${aed(arrAmt)}</b> (${C.arrears.length} cheque(s))</div>`:''}</div>
    <div class="tile s5"><h3>Where the money went</h3><div class="cap">Last 12 months · ${aed(ebT)}</div>${top.length?hbars(top,{color:COL.out}):empty('inbox','No expenses yet')}</div>
+   <div class="tile s12"><div class="row between"><div><h3>Money in and out</h3><div class="cap">Excluding the opening balance</div></div><div class="seg sm">${['6M','1Y','YTD'].map(r=>`<button class="${f.range===r?'on':''}" data-act="dashRange" data-r="${r}">${r}</button>`).join('')}</div></div>${bars12(rs)}</div>
+   <div class="tile s12 noprint"><div class="row between"><div><h3>Your buildings</h3><div class="cap">${f.unit?`Showing ${STC[f.unit].toLowerCase()} flats – `:''}${f.unit?'<a href="#" data-act="flatFilter" data-s="'+f.unit+'">clear filter</a>':'Tap a flat for details'}</div></div><a class="sa2" href="#/flats">Open Flats ›</a></div><div style="margin-top:14px">${D.buildings.map(b=>unitMap(b.id,states,f.unit)).join('')}</div></div>
+   ${rampCard()}
+
+
+
+
+
   </div>`;
 };
 
