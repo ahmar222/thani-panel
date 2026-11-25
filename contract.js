@@ -117,6 +117,7 @@ forms.contractGen=async f=>{
   if(!c.tenant||!c.start||!c.end||!c.annual){toast('Add the tenant name, dates and rent','err');return}
   const btn=document.querySelector('#modal button.primary');if(btn){btn.disabled=true;btn.textContent='Creating...'}
   try{
+    if(!(D.settings&&D.settings.signImg))toast('No signature uploaded yet - add it in Settings so it prints on the contract','err');
     const blob=await buildContract(c);
     D.contractDocs=D.contractDocs||[];D.contractDocs.push({no:c.no,date:c.date,building:c.b,unit:c.unit,tenant:c.tenant,start:c.start,end:c.end,annual:c.annual});
     const m=/^EA-(\d+)$/.exec(c.no);if(m&&+m[1]>(+D.settings.contractSeq||8446))D.settings.contractSeq=+m[1];save();
