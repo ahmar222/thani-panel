@@ -549,3 +549,22 @@ h3,h4{font-family:var(--fs);font-weight:700;font-size:1.3em;letter-spacing:0}
 .mid-n,.big-n,.k4 b{font-weight:700;letter-spacing:-.01em}
 .tile .cap,.k4 span{font-weight:600}
 .tile h3,.card h3{font-size:25px}.tile>.cap,.tile .cap:first-child{font-size:15px}
+
+/* ===== Hero v2: light pastel card, plum ink, flat buttons, inset figures ===== */
+.tile.hero{background:linear-gradient(135deg,#d3e8ff 0%,#e4d8f0 55%,#ffd9e8 100%)!important;color:#2a2142!important;border:1px solid rgba(42,33,66,.06)!important;box-shadow:var(--shadow)!important}
+.tile.hero .glow,.tile.hero .hero-i{display:none!important}
+.tile.hero .cap,.tile.hero>.cap,.tile.hero .hhead .cap{color:#4a4068!important;font-weight:600;max-width:none}
+.tile.hero .big-n,.tile.hero .big-n small{color:#2a2142!important}.tile.hero .big-n small{opacity:.55;font-size:.45em;margin-right:8px}
+.tile.hero .big-n{font-size:clamp(40px,5vw,56px);line-height:1}
+.tile.hero .chart text,.tile.hero svg text{fill:#6a6385!important}
+.tile.hero .chart line,.tile.hero .chart .grid{stroke:rgba(42,33,66,.12)!important}
+.tile.hero .chart path[fill]:not([fill=none]){fill:rgba(61,48,102,.10)!important}
+.tile.hero .btn.primary{background:#2a2142!important;color:#fff!important;box-shadow:none!important;border:0!important}
+.tile.hero .btn.primary:hover{background:#3d3066!important}
+.tile.hero .btn.ghost-h,.tile.hero .btn:not(.primary){background:rgba(255,255,255,.7)!important;border:0!important;color:#2a2142!important;box-shadow:none!important}
+.tile.hero .btn.ghost-h:hover{background:#fff!important}
+.tile.hero .recon{border:0!important;display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-top:6px}
+.tile.hero .recon>div{background:rgba(255,255,255,.65);border-radius:16px;padding:12px 16px}
+.tile.hero .recon span{color:#6a6385!important;font-size:13px;display:block}
+.tile.hero .recon b{color:#2a2142!important;font-size:20px}
+.tile.hero .recon em.ok2{color:#12704a!important;font-style:normal;font-size:12.5px;font-weight:600}.tile.hero .recon em.bad2{color:#b4234f!important;font-style:normal;font-size:12.5px}
