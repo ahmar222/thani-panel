@@ -183,7 +183,7 @@ const tenLabel=t=>`${t.building?bname(t.building)+' ':''}${t.units.length?t.unit
 const bname=id=>id==='both'?'Both buildings':(D.buildings.find(b=>b.id===id)?.name||'Unassigned');
 const bshort=id=>id==='baraha'?'Baraha':id==='muraqabat'?'Muraqabat':id==='both'?'Both':'—';
 const chqFace=(i)=>i.cheque?.amountFace||r2(((i.gross??i.amount)||0)+(i.deposit||0));
-function calc(){
+function calc(asOf){
   const S=D.settings,tol=S.tol??10,grace=S.graceDays||0,T=TODAY;
   const posted=D.entries.filter(e=>e.status!=='pending');
   const ten={};
@@ -232,24 +232,27 @@ function calc(){
   }
   overdue.sort((a,b)=>a.due<b.due?-1:1);soon.sort((a,b)=>a.due<b.due?-1:1);
   /* money */
-  const inc=posted.filter(e=>e.kind==='income'),exp=posted.filter(e=>e.kind==='expense'),pay=posted.filter(e=>e.kind==='payout');
+  /* accounting only looks at the current books year (after a year-end close); tenants always use every entry */
+  const ys=S.yearStart||'',acc=posted.filter(e=>(!ys||e.date>=ys)&&(!asOf||e.date<=asOf));
+  const inc=acc.filter(e=>e.kind==='income'),exp=acc.filter(e=>e.kind==='expense'),pay=acc.filter(e=>e.kind==='payout');
+  const pAll=posted.filter(e=>!asOf||e.date<=asOf);
   const sum=a=>r2(a.reduce((s,e)=>s+e.amount,0));
-  const depIn=sum(inc.filter(e=>e.cat==='deposit')),depOut=sum(exp.filter(e=>e.cat==='deposit_refund'));
+  const depIn=sum(pAll.filter(e=>e.kind==='income'&&e.cat==='deposit')),depOut=sum(pAll.filter(e=>e.kind==='expense'&&e.cat==='deposit_refund'));
   const cash=r2(S.openingCash+sum(inc.filter(e=>e.cat!=='carry'))-sum(exp)-sum(pay));
   let pool=S.holdDeposits?sum(inc.filter(e=>e.cat!=='deposit'))-sum(exp.filter(e=>e.cat!=='deposit_refund')):sum(inc)-sum(exp);
   pool=r2(pool+(S.holdDeposits?retained:0));
-  const mg=pool>0?r2(pool*S.mgmtPct/100):0,dist=r2(pool-mg-S.reserve);
+  const mg=pool>0?r2(pool*S.mgmtPct/100):0,resv=ys?0:S.reserve,dist=r2(pool-mg-resv),BF=S.bf||{};
   const totArea=D.partners.reduce((s,p)=>s+(+p.areaM||0)+(+p.areaB||0),0);
   const partners=D.partners.map(p=>{
     const area=r2((+p.areaM||0)+(+p.areaB||0)),share=area/totArea;
-    const entl=r2(dist*share+(p.manager?mg:0));
+    const bf=r2(+BF[p.id]||0),entl=r2(dist*share+(p.manager?mg:0)+bf);
     const paid=sum(pay.filter(e=>e.partnerId===p.id&&!e.prior));
-    return {p,area,share,entl,share_amt:r2(dist*share),fee:p.manager?mg:0,paid,owed:r2(entl-paid)};
+    return {p,area,share,entl,bf,share_amt:r2(dist*share),fee:p.manager?mg:0,paid,owed:r2(entl-paid)};
   });
   const retained=r2(D.tenancies.reduce((s,t)=>s+(t.moveOut?.deduction||0),0));
   const pending=D.entries.filter(e=>e.status==='pending');
   const lastEntry=posted.reduce((m,e)=>e.date>m&&e.cat!=='carry'?e.date:m,'');
-  return {ten,overdue,soon,lateNoDecision,chqHeld,chqHeldN,cash,pool,mg,dist,partners,totArea,depHeld:r2(depIn-depOut-retained),retained,arrears,pending,
+  return {ten,overdue,soon,lateNoDecision,chqHeld,chqHeldN,cash,pool,mg,dist,resv,yearStart:ys,bfTotal:r2(partners.reduce((s,x)=>s+x.bf,0)),partners,totArea,depHeld:r2(depIn-depOut-retained),retained,arrears,pending,
     pendingAmt:sum(pending.filter(e=>e.kind==='income')),owedTotal:r2(partners.reduce((s,x)=>s+x.owed,0)),lastEntry,
     income:sum(inc),expenses:sum(exp)};
 }
@@ -268,11 +271,13 @@ function unitStates(C){
 function series12(){
   const months=[];let m=monthKey(TODAY);for(let k=0;k<12;k++){months.unshift(m);m=monthKey(addMonths(m+'-01',-1))}
   const inn={},out={};months.forEach(m=>{inn[m]=0;out[m]=0});
-  D.entries.filter(e=>e.status!=='pending'&&e.cat!=='carry').forEach(e=>{const m=monthKey(e.date);if(!(m in inn))return;if(e.kind==='income')inn[m]+=e.amount;else if(e.kind==='expense')out[m]+=e.amount});
+  const ys=D.settings.yearStart||'';
+  D.entries.filter(e=>e.status!=='pending'&&e.cat!=='carry'&&(!ys||e.date>=ys)).forEach(e=>{const m=monthKey(e.date);if(!(m in inn))return;if(e.kind==='income')inn[m]+=e.amount;else if(e.kind==='expense')out[m]+=e.amount});
   return months.map(m=>({m,inn:r2(inn[m]),out:r2(out[m]),cash:cashAsOf(addMonths(m+'-01',1)>TODAY?TODAY:addDays(addMonths(m+'-01',1),-1))}));
 }
 function cashAsOf(date){
-  const S=D.settings,p=D.entries.filter(e=>e.status!=='pending'&&e.date<=date);let c=S.openingCash;
+  const S=D.settings,ys=S.yearStart||'',old=ys&&date<ys;
+  const p=D.entries.filter(e=>e.status!=='pending'&&e.date<=date&&(old||!ys||e.date>=ys));let c=old?(S.openingCashOrig??S.openingCash):S.openingCash;
   p.forEach(e=>{if(e.kind==='income'&&e.cat!=='carry')c+=e.amount;else if(e.kind==='expense'||e.kind==='payout')c-=e.amount});return r2(c);
 }
 function alerts(C){

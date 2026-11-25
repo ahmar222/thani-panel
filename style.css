@@ -579,3 +579,4 @@ h3,h4{font-family:var(--fs);font-weight:700;font-size:1.3em;letter-spacing:0}
 @media(max-width:860px){.osr{grid-template-columns:64px 1fr 54px 92px;gap:8px}}
 .osr{grid-template-columns:84px 1fr 58px 118px}.osamt{white-space:nowrap}.osamt.due{color:var(--ink)}
 @media(max-width:860px){.osr{grid-template-columns:66px 1fr 50px 100px}}
+.wfr.hero2 span{color:rgba(255,255,255,.9)!important}

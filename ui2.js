@@ -104,9 +104,9 @@ actions.chqPre=d=>{F.cheques.tab='week'};
 /* ---------- dashboard ---------- */
 const MONN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const ml=m=>MONN[+m.slice(5,7)-1];
-function rangeSeries(){const s=series12(),r=F.dash.range;return r==='6M'?s.slice(-6):r==='YTD'?s.filter(x=>x.m.startsWith(TODAY.slice(0,4))):s}
+function rangeSeries(){let s=series12(),r=F.dash.range;const ys=D.settings.yearStart;if(ys){const k=s.filter(x=>x.m>=ys.slice(0,7));if(k.length)s=k}return r==='6M'?s.slice(-6):r==='YTD'?s.filter(x=>x.m.startsWith(TODAY.slice(0,4))):s}
 function monthRent(){let due=0,got=0;const ms=TODAY.slice(0,7);D.tenancies.filter(t=>t.status==='active').forEach(t=>CC.ten[t.id].insts.forEach(i=>{if(!i.cancelled&&i.due.slice(0,7)===ms){due+=i.amount;got+=Math.min(i.paid,i.amount)}}));return {due:r2(due),got:r2(got)}}
-function expBreak(){const from=addMonths(TODAY.slice(0,7)+'-01',-11),m={};D.entries.filter(e=>e.status!=='pending'&&e.kind==='expense'&&e.date>=from&&e.cat!=='deposit_refund').forEach(e=>{const k=EXP_CATS[e.cat]||e.cat;m[k]=(m[k]||0)+e.amount});return Object.entries(m).sort((a,b)=>b[1]-a[1])}
+function expBreak(){let from=addMonths(TODAY.slice(0,7)+'-01',-11);const ys0=D.settings.yearStart;if(ys0&&ys0>from)from=ys0;const m={};D.entries.filter(e=>e.status!=='pending'&&e.kind==='expense'&&e.date>=from&&e.cat!=='deposit_refund').forEach(e=>{const k=EXP_CATS[e.cat]||e.cat;m[k]=(m[k]||0)+e.amount});return Object.entries(m).sort((a,b)=>b[1]-a[1])}
 
 const bdg=(n,tone)=>`<span class="ibadge ${tone}">${svgi(n,20,1.9)}</span>`;
 const RK={red:0,amber:1,blue:2};
@@ -160,8 +160,8 @@ PAGES.dashboard=()=>{
    <div class="tile hero s7"><span class="glow"></span>
      <div class="hhead">${i3('wallet','hero-i')}<div><div class="cap">Owed to partners today</div><div class="big-n"><small>AED</small>${cn(C.owedTotal)}</div></div></div>
      <div class="spkwrap">${spark(ser12.map(s=>s.cash),'#3d3066',{tips:ser12.map(s=>`${ml(s.m)} ${s.m.slice(0,4)}: AED ${money(s.cash,0)}`),xl:ser12.map(s=>ml(s.m))})}</div>
-     <div class="row hbtns"><button class="btn primary" data-act="distribute">Distribute to partners</button><a class="btn ghost-h" href="#/partners">See shares</a><a class="btn ghost-h" href="#/bank">Bank check</a></div>
-     <div class="recon"><div><span>Bank balance</span><b>${aed(C.cash)}</b>${v?(vok?'<em class="ok2">✓ matches statement</em>':'<em class="bad2">⚠ differs from statement</em>'):''}</div><div><span>Reserve kept</span><b>${aed(S.reserve)}</b></div></div></div>
+     <div class="row hbtns"><button class="btn primary" data-act="distribute">Distribute to partners</button><a class="btn ghost-h" href="#/partners">See shares</a><a class="btn ghost-h" href="#/bank">Bank check</a><button class="btn ghost-h" data-act="closeYear">Close the year</button></div>
+     <div class="recon"><div><span>Bank balance</span><b>${aed(C.cash)}</b>${v?(vok?'<em class="ok2">✓ matches statement</em>':'<em class="bad2">⚠ differs from statement</em>'):''}</div><div><span>Reserve kept</span><b>${aed(S.reserve)}</b></div></div>${S.yearStart?`<div class="cap" style="margin-top:8px">Books year started ${fd(S.yearStart)} · <a href="#" data-act="pastYears" style="color:inherit;text-decoration:underline">Past years</a></div>`:(D.closedYears&&D.closedYears.length?'':'')}</div>
    <div class="tile s5">${bdg('calendar','blue')}<h3>Rent this month</h3><div class="row" style="gap:20px;flex-wrap:nowrap;margin-top:6px">${ring(mr.due?mr.got/mr.due:0,mr.due&&mr.got>=mr.due?COL.occ:COL.in,{size:150,sub:'collected'})}<div><div class="mid-n"><small>AED</small>${cn(mr.got)}</div><div class="cap">of ${aed(mr.due)} due in ${MONN[+TODAY.slice(5,7)-1]}</div>${odAmt?`<a class="chip red" href="#/overdue" style="margin-top:10px">Overdue · ${aed(odAmt)} ›</a>`:'<span class="chip green" style="margin-top:10px">Nothing overdue</span>'}</div></div></div>
 
    <div class="tile s7"><div class="row between"><div><h3>Money in and out</h3><div class="cap">Excluding the opening balance</div></div><div class="seg sm">${['6M','1Y','YTD'].map(r=>`<button class="${f.range===r?'on':''}" data-act="dashRange" data-r="${r}">${r}</button>`).join('')}</div></div>${bars12(rs)}</div>

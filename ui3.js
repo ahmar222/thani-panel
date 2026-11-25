@@ -140,11 +140,11 @@ PAGES.partners=()=>{
      ${W('Total money to split','everything received minus expenses'+(S.holdDeposits?', tenant deposits held aside':''),C.pool)}
      ${W(`Management fee ${S.mgmtPct}%`,`goes to ${esc(m?.short||'the manager')}`,C.mg,'minus')}
      ${W('Balance','',bal,'sub')}
-     ${W('Kept for maintenance','stays in the account',S.reserve,'minus')}
+     ${W('Kept for maintenance',C.yearStart?'already kept from last year':'stays in the account',C.resv,'minus')}
      ${W('To share between partners','split by area (m²)',C.dist,'tot')}
     </div>
     <div class="wf two"><div class="cap" style="margin:0 0 4px">Then, what is due today</div>
-     ${W('Partners\' area shares','',r2(C.dist),'')}${W(`Management fee to ${esc(m?.short||'manager')}`,'',C.mg,'plus')}${W('Total entitled','',entl,'sub')}${W('Already paid out','',paid,'minus')}${W('Due now','',C.owedTotal,'tot hero2')}
+     ${W('Partners\' area shares','',r2(C.dist),'')}${W(`Management fee to ${esc(m?.short||'manager')}`,'',C.mg,'plus')}${C.bfTotal?W('Brought forward from last year','still unpaid when the year closed',C.bfTotal,'plus'):''}${W('Total entitled','',entl,'sub')}${W('Already paid out','',paid,'minus')}${W('Due now','',C.owedTotal,'tot hero2')}
     </div>
     <p class="muted xs" style="margin-top:12px">Check: bank ${aed(C.cash)} − ${aed(S.reserve)} kept = ${aed(r2(C.cash-S.reserve))} ${Math.abs(diff)<0.02?'<span class="ok">✓ equals the amount due</span>':`(differs from amount due by ${aed(diff)}: pending receipts or unrecorded movements)`}</p></div>
    <div class="tile s5"><h3>Ownership share</h3><div class="osh">${C.partners.slice().sort((a,b)=>b.share-a.share).map(x=>`<div class="osr"><b>${esc(x.p.short)}</b><div class="osb"><i style="width:${(x.share/Math.max(...C.partners.map(y=>y.share))*100).toFixed(1)}%"></i></div><span class="ospct">${(x.share*100).toFixed(2)}%</span><span class="osamt ${x.owed>0?'due':''}">AED ${money(x.owed,0)}</span></div>`).join('')}<div class="osr ost"><b>Total</b><span></span><span class="ospct">100%</span><span class="osamt">AED ${money(C.owedTotal,0)}</span></div></div><div class="muted xs" style="margin-top:8px">Share by area. The amount is what is still due to each partner today.</div></div>
@@ -188,3 +188,58 @@ forms.discountAll=f=>{const t=tenById(f.get('id')),x=CC.ten[f.get('id')];if(!t||
   x.insts.filter(i=>!i.done&&i.bal>0.004).forEach(ci=>{const i=t.installments.find(z=>z.no===ci.no);if(!i)return;i.discount=r2((+i.discount||0)+ci.bal);i.discountNote=f.get('note').trim();i.discountDate=TODAY;n++});
   closeModal();save();toast('Discount applied to '+n+' cheque'+(n>1?'s':''),'ok')};
 })();
+
+/* ---------- Close the year (accounting only – tenants are never touched) ---------- */
+function yearStartOf(){return D.settings.yearStart||D.settings.openingDate||''}
+function yearSummary(end){
+  const S=D.settings,ys=S.yearStart||'',C2=calc(end);
+  const acc=D.entries.filter(e=>e.status!=='pending'&&(!ys||e.date>=ys)&&e.date<=end);
+  const sm=a=>r2(a.reduce((s,e)=>s+e.amount,0));
+  return {C2,opening:S.openingCash,carry:sm(acc.filter(e=>e.kind==='income'&&e.cat==='carry')),received:sm(acc.filter(e=>e.kind==='income'&&e.cat!=='carry')),expenses:sm(acc.filter(e=>e.kind==='expense')),payouts:sm(acc.filter(e=>e.kind==='payout')),n:acc.length};
+}
+function closeYearOpen(end){
+  const S=D.settings;end=end||TODAY;const Y=yearSummary(end),C2=Y.C2,start=yearStartOf();
+  modal({wide:1,title:'Close the year',body:`<form data-form="closeYear">
+  <div class="note">This is for <b>your accounts only</b>. Tenants, cheques, instalments and payment history are not touched. The bank balance below becomes the opening balance of the new year, and the Ledger and Dashboard start again from the next day. Amounts partners are still owed are carried forward.</div>
+  <div class="fg"><label>Year ends on<input type="date" id="cyDate" name="end" value="${end}" min="${start}"></label><label>New year starts<input type="text" value="${fd(addDays(end,1))}" readonly></label></div>
+  <div class="wf"><div class="wfr"><div><b>Books year</b><span>${fd(start)} to ${fd(end)} · ${Y.n} entries</span></div><em></em></div>
+   <div class="wfr"><div><b>Opening balance</b></div><em>AED ${money(Y.opening,2)}</em></div>
+   <div class="wfr plus"><div><b>Received</b><span>rent, deposits, other</span></div><em>+ AED ${money(Y.received,2)}</em></div>
+   <div class="wfr minus"><div><b>Expenses</b></div><em>− AED ${money(Y.expenses,2)}</em></div>
+   <div class="wfr minus"><div><b>Paid to partners</b></div><em>− AED ${money(Y.payouts,2)}</em></div>
+   <div class="wfr tot hero2"><div><b>Closing balance in the bank</b><span>carried into the new year</span></div><em>AED ${money(C2.cash,2)}</em></div></div>
+  <table class="tbl" style="margin-top:12px"><thead><tr><th>Partner</th><th class="num">Entitled</th><th class="num">Paid</th><th class="num">Carried forward (due)</th></tr></thead><tbody>${C2.partners.map(x=>`<tr><td>${esc(x.p.short)}</td><td class="num">${money(x.entl)}</td><td class="num">${money(x.paid)}</td><td class="num"><b>${money(x.owed)}</b></td></tr>`).join('')}<tr class="tot"><td>Total</td><td class="num"></td><td class="num"></td><td class="num">${money(C2.owedTotal)}</td></tr></tbody></table>
+  <p class="muted xs">Reserve of ${aed(S.reserve)} stays in the account and is not taken again next year. You can undo the close later from Past years.</p>
+  <div class="row end"><button type="button" class="btn" data-act="closeModal">Cancel</button><button class="btn primary">Close the year</button></div></form>`});
+}
+actions.closeYear=()=>closeYearOpen(TODAY);
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='cyDate'&&e.target.value){const v=e.target.value;closeModal();closeYearOpen(v)}});
+forms.closeYear=f=>{
+  const S=D.settings,end=f.get('end');if(!end||end<yearStartOf())return toast('Pick a year-end date after the year start','err');
+  const Y=yearSummary(end),C2=Y.C2;
+  confirmBox(`Close the books year ending <b>${fd(end)}</b>? Closing bank balance <b>${aed(C2.cash)}</b> becomes the opening balance of the new year. Tenants are not affected.`,()=>{
+    D.closedYears=D.closedYears||[];
+    D.closedYears.push({id:uid('y'),start:yearStartOf(),end,closedOn:TODAY,opening:Y.opening,received:Y.received,expenses:Y.expenses,payouts:Y.payouts,closing:C2.cash,pool:C2.pool,mgmtFee:C2.mg,
+      partners:C2.partners.map(x=>({id:x.p.id,short:x.p.short,entl:x.entl,paid:x.paid,owed:x.owed})),
+      prev:{openingCash:S.openingCash,openingDate:S.openingDate,yearStart:S.yearStart||null,bf:S.bf||null,openingCashOrig:S.openingCashOrig??null}});
+    if(S.openingCashOrig==null)S.openingCashOrig=S.openingCash;
+    const bf={};C2.partners.forEach(x=>{bf[x.p.id]=x.owed});
+    S.bf=bf;S.openingCash=C2.cash;S.yearStart=addDays(end,1);S.openingDate=S.yearStart;
+    save();toast('Year closed – new year started '+fd(S.yearStart),'ok');
+  },'Close the year');
+};
+actions.pastYears=()=>{
+  const L=(D.closedYears||[]).slice().reverse();
+  modal({wide:1,title:'Past years',body:L.length?L.map((y,i)=>`<div class="card" style="margin-bottom:10px"><div class="row between"><b>${fd(y.start)} – ${fd(y.end)}</b>${i===0?`<button class="btn" data-act="undoClose">Undo this close</button>`:''}</div>
+   <div class="muted xs">Closed on ${fd(y.closedOn)}</div>
+   <table class="tbl" style="margin-top:6px"><tbody><tr><td>Opening balance</td><td class="num">${money(y.opening)}</td></tr><tr><td>Received</td><td class="num">${money(y.received)}</td></tr><tr><td>Expenses</td><td class="num">${money(y.expenses)}</td></tr><tr><td>Paid to partners</td><td class="num">${money(y.payouts)}</td></tr><tr class="tot"><td>Closing balance</td><td class="num">${money(y.closing)}</td></tr></tbody></table>
+   <div class="muted xs" style="margin-top:6px">Carried forward due: ${y.partners.map(p=>`${esc(p.short)} ${money(p.owed,0)}`).join(' · ')}</div></div>`).join(''):'<p class="muted">No year has been closed yet.</p>'});
+};
+actions.undoClose=()=>confirmBox('Undo the last year close? The books go back to one running year. Entries added since stay.',()=>{
+  const S=D.settings,y=D.closedYears.pop(),p=y.prev;
+  S.openingCash=p.openingCash;S.openingDate=p.openingDate;
+  if(p.yearStart)S.yearStart=p.yearStart;else delete S.yearStart;
+  if(p.bf)S.bf=p.bf;else delete S.bf;
+  if(p.openingCashOrig==null)delete S.openingCashOrig;else S.openingCashOrig=p.openingCashOrig;
+  save();toast('Close undone','ok');
+},'Undo close');
