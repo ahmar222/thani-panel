@@ -90,7 +90,7 @@ actions.ledPre=d=>{const f=F.ledger,y=TODAY.slice(0,4),m=TODAY.slice(0,7);f.pre=
   else if(d.k==='quarter'){const q=Math.floor((+TODAY.slice(5,7)-1)/3),sm=addMonths(y+'-01-01',q*3-3);f.from=sm;f.to=addDays(addMonths(sm,3),-1)}
   else if(d.k==='ytd'){f.from=y+'-01-01';f.to=TODAY}else{f.from='';f.to=''}refresh()};
 actions.ledRun=()=>{F.ledger.run=!F.ledger.run;_draw.ledger()};
-PAGES.ledger=()=>`<div class="ph"><div><h2>Ledger</h2></div><div class="toolbar"><button class="btn primary" data-act="addReceipt">${I('plus',16,2.2)} Receipt</button><button class="btn" data-act="addExpense">${I('plus',16,2.2)} Expense</button><button class="btn outline" data-act="ledCsv">Export CSV</button></div></div>
+PAGES.ledger=()=>`<div class="ph"><div><h2>Ledger</h2></div><div class="toolbar"><button class="btn primary" data-act="addReceipt">${I('plus',16,2.2)} Receipt</button><button class="btn" data-act="addExpense">${I('plus',16,2.2)} Expense</button><button class="btn outline" data-act="ledCsv">Export CSV</button><button class="btn outline" data-act="ledgerPdf">Export PDF</button></div></div>
  <div id="kpis"></div>
  <div class="fbar"><div class="sbox" style="min-width:200px"><input data-f="ledger.q" value="${esc(F.ledger.q)}" placeholder="Search description, flat, ref…"></div><select data-f="ledger.kind">${opt([['income','Money in'],['expense','Expenses'],['payout','Partner payouts']],F.ledger.kind,'All types')}</select>
  <select data-f="ledger.cat">${opt([...Object.entries(INC_CATS),...Object.entries(EXP_CATS)].filter((v,i,a)=>a.findIndex(x=>x[0]===v[0])===i),F.ledger.cat,'All categories')}</select><select data-f="ledger.b">${bOpts(F.ledger.b,'All buildings')}</select>
@@ -133,7 +133,7 @@ PAGES.partners=()=>{
   const bal=r2(C.pool-C.mg),entl=r2(C.partners.reduce((s,x)=>s+x.entl,0)),paid=r2(C.partners.reduce((s,x)=>s+x.paid,0)),diff=r2(C.cash-S.reserve-C.owedTotal);
   const sh=C.partners.slice().sort((a,b)=>b.share-a.share).map(x=>({label:x.p.short,v:+(x.share*100).toFixed(2),tip:`${x.p.name}\n${x.area.toFixed(2)} m²`}));
   const W=(l,s,v,k)=>`<div class="wfr ${k||''}"><div><b>${l}</b>${s?`<span>${s}</span>`:''}</div><em>${k==='minus'?'−':k==='plus'?'+':''} AED ${money(Math.abs(v),2)}</em></div>`;
-  return `<div class="ph"><div><h2>Partners</h2><div class="sub">Who is owed what, live</div></div><div class="row"><button class="btn primary" data-act="distribute">Distribute / pay</button><button class="btn" data-act="copyShares">Copy summary</button></div></div>
+  return `<div class="ph"><div><h2>Partners</h2><div class="sub">Who is owed what, live</div></div><div class="row"><button class="btn primary" data-act="distribute">Distribute / pay</button><button class="btn" data-act="copyShares">Copy summary</button><button class="btn" data-act="partnersPdf">Export PDF</button></div></div>
   <div class="bento">
    <div class="tile s7"><h3>How the money is split</h3><div class="cap">Step by step, from the total down to what each partner receives</div>
     <div class="wf">

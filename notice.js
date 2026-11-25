@@ -77,6 +77,60 @@ async function buildNotice({t,i,fine,date,days}){
   doc.setDrawColor(226,230,236).setLineWidth(.7).line(M,H-30,W-M,H-30);doc.setFont('helvetica','normal').setFontSize(7.5).setTextColor(...MUT).text('Issued by Thani Al Thani Real Estate Management · '+ref,M,H-18);
   return doc.output('blob');
 }
+
+/* ---------- Partners statement PDF ---------- */
+actions.partnersPdf=async()=>{try{
+  await loadJsPdf();const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'pt',format:'a4',orientation:'landscape'}),W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=40;
+  const C=CC,S=D.settings,m=D.partners.find(p=>p.manager),INK=[22,32,46],SL=[15,42,58],MUT=[100,110,122],ORG=[233,104,52],fm=n=>money(n,2);
+  const entl=r2(C.partners.reduce((s,x)=>s+x.entl,0)),paid=r2(C.partners.reduce((s,x)=>s+x.paid,0));
+  doc.setFillColor(...SL).roundedRect(M,32,34,34,7,7,'F');doc.setFillColor(255,255,255).rect(M+7,44,8,17,'F').rect(M+18,38,9,23,'F');
+  doc.setFont('helvetica','bold').setFontSize(15).setTextColor(...SL).text('THANI AL THANI',M+44,47);doc.setFont('helvetica','normal').setFontSize(8).setTextColor(...MUT).text('REAL ESTATE MANAGEMENT  ·  DUBAI',M+44,60,{charSpace:1});
+  doc.setFontSize(9).text('Partners statement',W-M,44,{align:'right'});doc.setFont('helvetica','bold').setFontSize(11).setTextColor(...INK).text(longDate(TODAY),W-M,58,{align:'right'});
+  doc.setDrawColor(...SL).setLineWidth(1.5).line(M,76,W-M,76);doc.setDrawColor(...ORG).line(M,76,M+60,76);
+  let y=104;doc.setFont('helvetica','bold').setFontSize(15).setTextColor(...INK).text('How the money is split',M,y);y+=14;
+  const steps=[['Total money to split',fm(C.pool),''],['Less management fee '+S.mgmtPct+'% ('+(m?m.short:'manager')+')','- '+fm(C.mg),'m'],['Balance',fm(r2(C.pool-C.mg)),'s'],['Less kept for maintenance','- '+fm(S.reserve),'m'],['To share between partners (by area)',fm(C.dist),'t']];
+  const sw=300;steps.forEach((s,k)=>{const ry=y+k*22;if(s[2]==='t'){doc.setFillColor(...SL).rect(M,ry,sw,22,'F')}else if(s[2]==='s'){doc.setFillColor(241,245,249).rect(M,ry,sw,22,'F')}
+    doc.setFont('helvetica',s[2]==='t'||s[2]==='s'?'bold':'normal').setFontSize(10).setTextColor(...(s[2]==='t'?[255,255,255]:INK)).text(s[0],M+8,ry+15);doc.text('AED '+s[1],M+sw-8,ry+15,{align:'right'})});
+  const x2=M+sw+40,st2=[['Partners\' area shares',fm(C.dist),''],['Plus management fee to '+(m?m.short:'manager'),'+ '+fm(C.mg),''],['Total entitled',fm(entl),'s'],['Less already paid out','- '+fm(paid),''],['Due now',fm(C.owedTotal),'o']];
+  st2.forEach((s,k)=>{const ry=y+k*22;if(s[2]==='o'){doc.setFillColor(...ORG).rect(x2,ry,sw+30,22,'F')}else if(s[2]==='s'){doc.setFillColor(241,245,249).rect(x2,ry,sw+30,22,'F')}
+    doc.setFont('helvetica',s[2]?'bold':'normal').setFontSize(10).setTextColor(...(s[2]==='o'?[255,255,255]:INK)).text(s[0],x2+8,ry+15);doc.text('AED '+s[1],x2+sw+22,ry+15,{align:'right'})});
+  y+=5*22+12;doc.setFont('helvetica','normal').setFontSize(8.5).setTextColor(...MUT).text(`Check: bank AED ${fm(C.cash)} - AED ${fm(S.reserve)} kept = AED ${fm(r2(C.cash-S.reserve))}`+(Math.abs(C.cash-S.reserve-C.owedTotal)<0.02?'  (equals the amount due)':''),M,y);
+  y+=24;const cols=[['Partner',0,'l'],['Area m2',150,'r'],['Share',215,'r'],['Area share',305,'r'],['Mgmt fee',395,'r'],['Entitled',490,'r'],['Paid',585,'r'],['Due now',W-2*M,'r']];
+  doc.setFillColor(241,245,249).rect(M,y,W-2*M,22,'F');doc.setFont('helvetica','bold').setFontSize(9).setTextColor(...MUT);cols.forEach(c=>doc.text(c[0],M+(c[2]==='r'?c[1]-6:6),y+15,{align:c[2]==='r'?'right':'left'}));y+=22;
+  const row=(v,bold)=>{doc.setFont('helvetica',bold?'bold':'normal').setFontSize(10).setTextColor(...INK);v.forEach((t,i)=>{const c=cols[i];doc.text(String(t),M+(c[2]==='r'?c[1]-6:6),y+15,{align:c[2]==='r'?'right':'left'})});doc.setDrawColor(228,231,236).setLineWidth(.6).line(M,y+22,W-M,y+22);y+=22};
+  C.partners.forEach(x=>row([x.p.short+(x.p.manager?' (manager)':''),x.area.toFixed(2),(x.share*100).toFixed(2)+'%',fm(x.share_amt),x.fee?fm(x.fee):'—',fm(x.entl),fm(x.paid),fm(x.owed)]));
+  row(['Total',C.totArea.toFixed(2),'100%',fm(C.dist),fm(C.mg),fm(entl),fm(paid),fm(C.owedTotal)],true);
+  doc.setFont('helvetica','normal').setFontSize(7.5).setTextColor(...MUT).text('Amounts in AED · generated '+longDate(TODAY)+' from the Thani Real Estate admin panel',M,H-24);
+  const blob=doc.output('blob'),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Partners-statement_${TODAY}.pdf`;a.click();toast('Partners PDF downloaded','ok');
+}catch(e){toast(e.message||'Could not create the PDF','err')}};
+
+/* ---------- Ledger PDF (respects current filters) ---------- */
+actions.ledgerPdf=async()=>{try{
+  await loadJsPdf();const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'pt',format:'a4',orientation:'landscape'}),W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=36;
+  const INK=[22,32,46],SL=[15,42,58],MUT=[100,110,122],ORG=[233,104,52],GRN=[5,122,85],RED=[185,28,28],fm=n=>money(n,2),f=F.ledger;
+  const L=ledgerRows().slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0),ok=e=>e.status!=='pending';
+  const tin=r2(L.filter(e=>e.kind==='income'&&ok(e)).reduce((s,e)=>s+e.amount,0)),tex=r2(L.filter(e=>e.kind==='expense').reduce((s,e)=>s+e.amount,0)),tpo=r2(L.filter(e=>e.kind==='payout').reduce((s,e)=>s+e.amount,0));
+  const head=()=>{doc.setFillColor(...SL).roundedRect(M,28,30,30,6,6,'F');doc.setFillColor(255,255,255).rect(M+6,38,7,15,'F').rect(M+16,33,8,20,'F');
+    doc.setFont('helvetica','bold').setFontSize(13).setTextColor(...SL).text('THANI AL THANI',M+40,41);doc.setFont('helvetica','normal').setFontSize(7.5).setTextColor(...MUT).text('REAL ESTATE MANAGEMENT  ·  DUBAI',M+40,52,{charSpace:1});
+    doc.setFontSize(9).text('Ledger',W-M,38,{align:'right'});doc.setFont('helvetica','bold').setFontSize(10.5).setTextColor(...INK).text(longDate(TODAY),W-M,52,{align:'right'});
+    doc.setDrawColor(...SL).setLineWidth(1.4).line(M,66,W-M,66);doc.setDrawColor(...ORG).line(M,66,M+54,66)};
+  head();let y=92;
+  const kp=[['Total in','AED '+fm(tin),[236,253,245]],['Expenses','AED '+fm(tex),[255,247,237]],['Partner payouts','AED '+fm(tpo),[239,246,255]],['Net ledger balance','AED '+fm(r2(tin-tex-tpo)),null]],kw=(W-2*M-30)/4;
+  kp.forEach((k,i)=>{const x=M+i*(kw+10);if(k[2])doc.setFillColor(...k[2]);else doc.setFillColor(...SL);doc.roundedRect(x,y-14,kw,44,6,6,'F');doc.setFont('helvetica','normal').setFontSize(8).setTextColor(...(k[2]?MUT:[167,196,192])).text(k[0],x+10,y);doc.setFont('helvetica','bold').setFontSize(13).setTextColor(...(k[2]?INK:[255,255,255])).text(k[1],x+10,y+18)});
+  y+=48;const fl=[];if(f.from||f.to)fl.push((f.from?fd(f.from):'start')+' to '+(f.to?fd(f.to):'today'));if(f.kind)fl.push(f.kind);if(f.cat)fl.push(catName({cat:f.cat,kind:f.kind}));if(f.b)fl.push(bname(f.b));if(f.q)fl.push('search: '+f.q);
+  doc.setFont('helvetica','normal').setFontSize(8.5).setTextColor(...MUT).text(`${L.length} entries`+(fl.length?'  ·  Filters: '+fl.join(', '):'  ·  All entries'),M,y);y+=12;
+  const cols=[['Date',0,'l'],['Type',62,'l'],['Flat',172,'l'],['Description',252,'l'],['Mode',548,'l'],['In',W-2*M-80,'r'],['Out',W-2*M,'r']];
+  const th=()=>{doc.setFillColor(241,245,249).rect(M,y,W-2*M,20,'F');doc.setFont('helvetica','bold').setFontSize(8.5).setTextColor(...MUT);cols.forEach(c=>doc.text(c[0],M+(c[2]==='r'?c[1]-6:c[1]+6),y+13,{align:c[2]==='r'?'right':'left'}));y+=20};th();
+  const cut=(t,w)=>{t=String(t||'');while(t.length>3&&doc.getTextWidth(t)>w)t=t.slice(0,-2);return t};
+  L.forEach(e=>{if(y>H-50){doc.addPage();head();y=88;th()}
+    const fm2=e.building||e.unitLabel?(bshort(e.building)+(e.unitLabel?' - '+e.unitLabel:'')):'';
+    const v=[fd(e.date),catName(e)+(e.status==='pending'?' (pending)':''),fm2,(e.kind==='payout'?(partnerById(e.partnerId)?.short||'')+' - ':'')+(e.desc||''),e.mode||''];
+    doc.setFont('helvetica','normal').setFontSize(8.5).setTextColor(...INK);v.forEach((t,i)=>doc.text(cut(t,(cols[i+1]?cols[i+1][1]:cols[i][1]+90)-cols[i][1]-8),M+cols[i][1]+6,y+13));
+    if(e.kind==='income'){doc.setTextColor(...GRN).text('+'+fm(e.amount),M+cols[5][1]-6,y+13,{align:'right'})}else{doc.setTextColor(...RED).text('-'+fm(e.amount),M+cols[6][1]-6,y+13,{align:'right'})}
+    doc.setDrawColor(235,238,242).setLineWidth(.5).line(M,y+19,W-M,y+19);y+=19});
+  const n=doc.getNumberOfPages();for(let p=1;p<=n;p++){doc.setPage(p);doc.setFont('helvetica','normal').setFontSize(7.5).setTextColor(...MUT).text('Amounts in AED · page '+p+' of '+n,M,H-18)}
+  const a=document.createElement('a');a.href=URL.createObjectURL(doc.output('blob'));a.download=`Ledger_${TODAY}.pdf`;a.click();toast('Ledger PDF downloaded','ok')
+}catch(e){toast(e.message||'Could not create the PDF','err')}};
 /* add a "Notice" button to overdue rows */
 const addBtn=h=>h.replace(/<button class="btn sm" data-act="payInst" data-t="([^"]+)" data-n="([^"]+)">Receive<\/button>/g,(m,t,n)=>m+` <button class="btn sm outline" data-act="penaltyNotice" data-t="${t}" data-n="${n}" title="Create a late payment notice PDF">Notice</button>`);
 const _od=overdueTable;overdueTable=function(L,soon){const h=_od(L,soon);return soon?h:addBtn(h)};
