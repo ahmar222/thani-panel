@@ -584,3 +584,10 @@ h3,h4{font-family:var(--fs);font-weight:700;font-size:1.3em;letter-spacing:0}
 .greet{transition:opacity .35s ease}
 
 .rf .rf-sec+.rf-sec{margin-top:14px;padding-top:14px;border-top:1px solid rgba(61,48,102,.12)}
+
+/* hero footer: figures first, then one tidy action row */
+.tile.hero .recon{margin-bottom:12px;padding-top:2px}
+.tile.hero .hbtns{display:grid!important;grid-template-columns:1.5fr 1fr 1fr;gap:10px;margin:0}
+.tile.hero .hbtns .btn{justify-content:center;height:46px;white-space:nowrap}
+.tile.hero .hbtns .primary{grid-column:auto!important;height:46px}
+@media(max-width:700px){.tile.hero .hbtns{grid-template-columns:1fr 1fr}.tile.hero .hbtns .primary{grid-column:1/-1!important}}
