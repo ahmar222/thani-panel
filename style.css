@@ -536,3 +536,16 @@ a{color:#7b4fb5}
 .k4.in{background:linear-gradient(160deg,#d6ebff,#a2d2ff)}.k4.out{background:linear-gradient(160deg,#ffc8dd,#ffafcc)}.k4.po{background:linear-gradient(160deg,#e7d9f0,#cdb4db)}
 .k4.net{background:linear-gradient(160deg,#2a2142,#3d3066)}.k4.net span{color:#cdb4db}.k4.net b{color:#fff}
 @media(min-width:861px){#tbl .tcard td:nth-child(4){min-width:150px}#tbl .tcard td:nth-child(6){font-size:12px;word-break:break-all;min-width:150px;max-width:170px;white-space:normal}.tcard .chip,.tcard .pill{white-space:nowrap}}
+
+/* ===== Type: Cormorant Garamond (titles) + Niramit (everything else) ===== */
+:root{--fd:'Niramit',system-ui,-apple-system,'Segoe UI',sans-serif;--fb:'Niramit',system-ui,-apple-system,'Segoe UI',sans-serif;--fs:'Cormorant Garamond',Georgia,'Times New Roman',serif}
+body{font-size:17px;letter-spacing:0}
+h1,h2,.ph h2,.mtitle,#side .brand .t{font-family:var(--fs)!important;font-weight:700;letter-spacing:-.01em}
+.ph h2{font-size:clamp(32px,6vw,42px);line-height:1.05}
+h3,h4{font-family:var(--fs);font-weight:700;font-size:1.3em;letter-spacing:0}
+.tile h3,.card h3{font-size:22px;line-height:1.1}
+#side .brand .t{font-size:24px}.mtitle{font-size:26px!important;font-weight:700}
+.btn,.seg button,.chip,.pill,.pill-f,#tabbar a,#tabbar button,.mid-n,.big-n,.k4 b{font-family:var(--fb)!important;font-weight:700}
+.mid-n,.big-n,.k4 b{font-weight:700;letter-spacing:-.01em}
+.tile .cap,.k4 span{font-weight:600}
+.tile h3,.card h3{font-size:25px}.tile>.cap,.tile .cap:first-child{font-size:15px}
