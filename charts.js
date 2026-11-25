@@ -74,7 +74,7 @@ const ILL={
   building:'<svg viewBox="0 0 120 90"><g class="bob"><rect x="30" y="14" width="60" height="62" rx="6" fill="#f1e8ef" stroke="#5e2750" stroke-width="5"/><g fill="#e95420"><rect x="40" y="26" width="12" height="12" rx="2"/><rect x="68" y="26" width="12" height="12" rx="2"/><rect x="40" y="48" width="12" height="12" rx="2"/></g><rect x="66" y="50" width="14" height="26" rx="2" fill="#5e2750"/></g></svg>'
 };
 /* vector line icons (Lucide-style, 24px, 2px stroke) */
-const LUC={
+const LUC={sign:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
  wallet:'<path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/><path d="M21 12h-5a2 2 0 0 0 0 4h5z"/>',
  calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
  chart:'<path d="M3 3v18h18"/><path d="M7 16v-5M12 16V7M17 16v-3"/>',

@@ -3,6 +3,7 @@
 let _jp=null;
 const BANK0={bankName:'Emirates Islamic Bank',accName:'Thani Rashed Essa',accNo:'3707661081002',iban:'AE460340003707661081002'};
 window.landlordBank=()=>Object.assign({},BANK0,(D&&D.settings&&D.settings.landlordBank)||{});
+window.loadJsPdf=loadJsPdf;
 function loadJsPdf(){if(window.jspdf)return Promise.resolve();return _jp||(_jp=new Promise((ok,no)=>{const s=document.createElement('script');s.src=window.JSPDF_SRC||'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=ok;s.onerror=()=>{_jp=null;no(new Error('PDF library could not load (offline?)'))};document.head.appendChild(s)}))}
 const longDate=s=>{const [y,m,d]=s.split('-');return ['January','February','March','April','May','June','July','August','September','October','November','December'][+m-1]+' '+(+d)+', '+y};
 const findInst=(tid,no)=>{const x=CC.ten[tid];return x&&x.insts.find(i=>String(i.no)===String(no))};

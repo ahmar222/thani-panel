@@ -1,7 +1,7 @@
 /* ===== UI v2: chrome (sidebar, header, search), dashboard, flats + drawer ===== */
 (function(){
 /* ---------- chrome ---------- */
-const NAV=[['dashboard','grid','Dashboard'],0,['Operations'],['tenants','users','Tenants & Ejari'],['flats','building','Flats'],['Finance'],['cheques','file','Cheque register'],['receipts','inbox','Receipts'],['overdue','clock','Overdue & penalties'],['ledger','book','Ledger'],['bank','bank','Bank check'],['Admin'],['partners','pie','Partners'],['costs','wrench','Expenses & staff'],['settings','sliders','Settings']];
+const NAV=[['dashboard','grid','Dashboard'],0,['Operations'],['tenants','users','Tenants & Ejari'],['contracts','sign','Contracts'],['flats','building','Flats'],['Finance'],['cheques','file','Cheque register'],['receipts','inbox','Receipts'],['overdue','clock','Overdue & penalties'],['ledger','book','Ledger'],['bank','bank','Bank check'],['Admin'],['partners','pie','Partners'],['costs','wrench','Expenses & staff'],['settings','sliders','Settings']];
 $('#side').innerHTML=`<div class="brand"><i>${svgi('building',20,2)}</i><span class="t">Thani Real Estate</span></div>`+NAV.map(n=>!n?'':n.length===1?`<div class="grp"><span class="t">${n[0]}</span></div>`:`<a href="#/${n[0]}" data-r="${n[0]}" title="${n[2]}">${svgi(n[1],20,1.9)}<span class="t">${n[2]}</span>${n[0]==='receipts'?'<span id="inboxbadge" hidden></span>':''}</a>`).join('');
 $('#app > div').firstElementChild.outerHTML=`<header class="top"><button class="btn icon" id="menu" aria-label="Menu">${svgi('menu',20)}</button>
  <button class="searchbtn" id="searchBtn" data-act="openSearch">${svgi('search',18)}<span class="ph-t">Search tenants, flats, cheques…</span><kbd>⌘K</kbd></button><span class="sp"></span>
