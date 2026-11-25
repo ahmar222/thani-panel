@@ -161,3 +161,30 @@ PAGES.partners=()=>{
 /* label table cells so they can stack as cards on phones */
 (function(){let q=0;const lab=()=>{q=0;document.querySelectorAll('.tcard table').forEach(t=>{const h=[...t.querySelectorAll('thead th')].map(x=>x.textContent.trim());t.querySelectorAll('tbody tr').forEach(r=>{[...r.children].forEach((c,i)=>{if(c.tagName!=='TD')return;if(h[i]&&!c.dataset.l)c.dataset.l=h[i];if(!c.textContent.trim()&&!c.querySelector('button,input,a,svg'))c.dataset.e=1})})})};
  new MutationObserver(()=>{if(!q)q=requestAnimationFrame(lab)}).observe(document.getElementById('main'),{childList:true,subtree:true})})();
+
+(function(){
+/* ---------- discount on an instalment: lowers the rent value, no ledger entry ---------- */
+actions.discountInst=d=>{const t=tenById(d.t),i=t&&t.installments.find(z=>String(z.no)===String(d.n)),x=CC.ten[d.t],ci=x&&x.insts.find(z=>String(z.no)===String(d.n));if(!t||!i||!ci)return;
+  const left=r2(ci.gross-ci.disc-ci.paid+ci.disc);const sugg=i.discount||Math.max(0,r2(ci.gross-ci.paid));
+  modal({small:1,title:'Discount on cheque #'+i.no,body:`<form data-form="discount"><input type="hidden" name="t" value="${t.id}"><input type="hidden" name="n" value="${i.no}">
+   <p><b>${esc(t.tenant)}</b> · ${esc(bshort(t.building))} ${esc(t.units.join('+'))}<br><span class="muted">Rent ${fd(i.due)}: AED ${money(ci.gross)} · paid AED ${money(ci.paid)}</span></p>
+   <label>Discount amount (AED)<input type="number" step="0.01" min="0" max="${ci.gross}" name="amt" value="${sugg}" required autofocus></label>
+   <label>Reason (kept on the tenant record)<input name="note" value="${esc(i.discountNote||'')}" placeholder="e.g. balance let go as a discount"></label>
+   <div class="note">This lowers the rent for this cheque. Nothing is added to the ledger or the accounts – the unpaid amount simply stops being owed.</div>
+   <div class="row end" style="margin-top:12px">${i.discount?'<button type="button" class="btn danger" data-act="discountRemove" data-t="'+t.id+'" data-n="'+i.no+'">Remove discount</button>':''}<button type="button" class="btn" data-act="closeModal">Cancel</button><button class="btn primary">Save discount</button></div></form>`})};
+forms.discount=f=>{const t=tenById(f.get('t')),i=t&&t.installments.find(z=>String(z.no)===f.get('n'));if(!i)return;const a=Math.max(0,Math.min(+f.get('amt')||0,i.amount));
+  if(a>0){i.discount=a;i.discountNote=f.get('note').trim();i.discountDate=TODAY}else{delete i.discount;delete i.discountNote;delete i.discountDate}
+  closeModal();save();toast(a>0?'Discount of AED '+money(a)+' applied to the rent':'Discount removed','ok')};
+actions.discountRemove=d=>{const t=tenById(d.t),i=t&&t.installments.find(z=>String(z.no)===String(d.n));if(!i)return;delete i.discount;delete i.discountNote;delete i.discountDate;closeModal();save();toast('Discount removed','ok')};
+})();
+
+(function(){
+actions.discountAll=d=>{const t=tenById(d.id),x=CC.ten[d.id];if(!t||!x)return;const L=x.insts.filter(i=>!i.done&&i.bal>0.004),tot=r2(L.reduce((s,i)=>s+i.bal,0));if(!L.length)return toast('Nothing unpaid to discount','err');
+  modal({small:1,title:'Discount all unpaid rent',body:`<form data-form="discountAll"><input type="hidden" name="id" value="${t.id}"><p><b>${esc(t.tenant)}</b> · ${esc(bshort(t.building))} ${esc(t.units.join('+'))}</p>
+   <div class="note">${L.length} unpaid cheque${L.length>1?'s':''} totalling <b>AED ${money(tot)}</b> will be let go as a discount – for example before a renewal on a fresh contract with no carry-forward.</div>
+   <label>Reason<input name="note" value="Balance let go at renewal"></label><p class="muted xs">Only the rent value is reduced. The ledger and accounts are not touched.</p>
+   <div class="row end"><button type="button" class="btn" data-act="closeModal">Cancel</button><button class="btn primary">Discount AED ${money(tot)}</button></div></form>`})};
+forms.discountAll=f=>{const t=tenById(f.get('id')),x=CC.ten[f.get('id')];if(!t||!x)return;let n=0;
+  x.insts.filter(i=>!i.done&&i.bal>0.004).forEach(ci=>{const i=t.installments.find(z=>z.no===ci.no);if(!i)return;i.discount=r2((+i.discount||0)+ci.bal);i.discountNote=f.get('note').trim();i.discountDate=TODAY;n++});
+  closeModal();save();toast('Discount applied to '+n+' cheque'+(n>1?'s':''),'ok')};
+})();

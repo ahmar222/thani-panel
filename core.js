@@ -182,12 +182,12 @@ async function readReceiptFile(file){
 const tenLabel=t=>`${t.building?bname(t.building)+' ':''}${t.units.length?t.units.join('+'):'(flat?)'} – ${t.tenant}`;
 const bname=id=>id==='both'?'Both buildings':(D.buildings.find(b=>b.id===id)?.name||'Unassigned');
 const bshort=id=>id==='baraha'?'Baraha':id==='muraqabat'?'Muraqabat':id==='both'?'Both':'—';
-const chqFace=(i)=>i.cheque?.amountFace||r2((i.amount||0)+(i.deposit||0));
+const chqFace=(i)=>i.cheque?.amountFace||r2(((i.gross??i.amount)||0)+(i.deposit||0));
 function calc(){
   const S=D.settings,tol=S.tol??10,grace=S.graceDays||0,T=TODAY;
   const posted=D.entries.filter(e=>e.status!=='pending');
   const ten={};
-  D.tenancies.forEach(t=>{ten[t.id]={t,insts:t.installments.map(i=>({...i,paid:i.settled&&!i.cancelled?i.amount:0,allocs:[],pen:0,tid:t.id,t}))}});
+  D.tenancies.forEach(t=>{ten[t.id]={t,insts:t.installments.map(i=>{const dsc=Math.min(+i.discount||0,i.amount||0),net=r2(i.amount-dsc);return {...i,gross:i.amount,disc:dsc,amount:net,paid:i.settled&&!i.cancelled?net:0,allocs:[],pen:0,tid:t.id,t}})}});
   /* rent allocation: explicit cheque no. first, otherwise oldest unpaid first */
   const rents=posted.filter(e=>e.kind==='income'&&e.cat==='rent'&&e.tenancyId&&ten[e.tenancyId]).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
   for(const e of rents){

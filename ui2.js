@@ -135,7 +135,7 @@ function rampCard(){
   const first=T.map(t=>t.start).sort()[0].slice(0,7),cur=TODAY.slice(0,7),N=D.units.length;const rows=[];
   for(let m=first;m<=cur;m=addMonths(m+'-01',1).slice(0,7)){const ref=m===cur?TODAY:addDays(addMonths(m+'-01',1),-1);
     const live=T.filter(t=>t.start<=ref&&(t.end>=ref)&&!(t.endedOn&&t.endedOn<=ref)&&!(t.vacatedOn&&t.vacatedOn<=ref));
-    const let_=live.reduce((s,t)=>s+t.units.length,0),rent=Math.round(live.reduce((s,t)=>s+(t.annual||0)/12,0));
+    const let_=live.reduce((s,t)=>s+t.units.length,0),rent=Math.round(live.reduce((s,t)=>s+((t.annual||0)-t.installments.reduce((q,i)=>q+(+i.discount||0),0))/12,0));
     const got=r2(D.entries.filter(e=>e.kind==='income'&&e.cat==='rent'&&e.status!=='pending'&&e.date.slice(0,7)===m).reduce((s,e)=>s+e.amount,0));
     rows.push({m,let_,rent,got})}
   const last=rows[rows.length-1],mx=Math.max(1,...rows.map(r=>Math.max(r.rent,r.got))),full=rows.find(r=>r.rent>=last.rent*.7);
