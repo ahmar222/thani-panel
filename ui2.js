@@ -71,7 +71,7 @@ function drawer(){
 actions.goTenant=d=>{actions.closeDrawer();closeModal();location.hash='#/tenant/'+d.id};
 
 /* ---------- Flats page ---------- */
-const tenHead=view=>`<div class="ph"><div><h2>${view==='map'?'Flats':'Tenants'}</h2></div><div class="toolbar"><div class="seg"><a class="${view==='map'?'on':''}" href="#/flats">Map</a><a class="${view==='list'?'on':''}" href="#/tenants">List</a></div><button class="btn primary" data-act="newTenant">${svgi('plus',16,2.2)} New tenant</button><label class="btn">${svgi('scan',18,1.9)} Read Ejari<input type="file" accept="application/pdf,image/*" hidden data-act-change="ejari"></label></div></div>`;
+const tenHead=view=>`<div class="ph"><div><h2>${view==='map'?'Flats':'Tenants'}</h2></div><div class="toolbar"><div class="seg"><a class="${view==='map'?'on':''}" href="#/flats">Map</a><a class="${view==='list'?'on':''}" href="#/tenants">List</a></div><button class="btn primary" data-act="newTenant">${svgi('plus',16,2.2)} New tenant</button><label class="btn">${svgi('scan',18,1.9)} Read Ejari<input type="file" accept="application/pdf,image/*" hidden data-act-change="ejari"></label><label class="btn">${svgi('file',18,1.9)} Link many Ejari<input type="file" accept="application/pdf" multiple hidden data-act-change="ejariBulk"></label></div></div>`;
 PAGES.flats=()=>{
   const f=F.flats,all=unitStates(CC),inB=all.filter(s=>!f.b||s.u.building===f.b),cnt=stateCounts(inB);
   const lost=Math.round(inB.filter(s=>!s.t&&s.past).reduce((q,s)=>q+monthly(s.past),0));

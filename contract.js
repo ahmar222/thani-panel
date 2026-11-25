@@ -307,4 +307,35 @@ async function buildNonRenew({t,date,vacate,why}){
   doc.setFont('helvetica','normal').setFontSize(8).setTextColor(...MUT).text('Ref: NRN-'+date.replace(/-/g,'')+'-'+unit.replace(/\W+/g,''),M,H-40);
   return doc.output('blob');
 }
+
+/* ---------------- bulk Ejari import: drop many certificates, match each to its flat ---------------- */
+const unitKey=i=>{let p=String(i.propertyNo||'').trim().toUpperCase().replace(/^(FLAT|ROOM|UNIT)\s*(NO\.?)?\s*/,'');if(/shop/i.test(i.propType||'')&&!/^SHOP/.test(p))p='SHOP '+p;return p};
+function matchTen(i){const u=unitKey(i),c=(D.tenancies||[]).filter(t=>t.building===i.building&&t.units.includes(u));
+  return c.find(t=>t.ejari&&t.ejari.contractNo===i.contractNo)||c.find(t=>t.start===i.start)||c.filter(t=>t.status==='active'&&(!i.start||t.end>=i.start)).sort((a,b)=>Math.abs(daysBetween(a.start,i.start||a.start))-Math.abs(daysBetween(b.start,i.start||b.start)))[0]||null}
+document.addEventListener('change',async e=>{const t=e.target;if(!(t.dataset&&t.dataset.actChange==='ejariBulk')||!t.files.length)return;
+  const fs=[...t.files];t.value='';const rows=[],seen=new Set();let n=0;
+  toast(`Reading ${fs.length} Ejari file${fs.length===1?'':'s'}... this takes a moment`);
+  for(const file of fs){n++;
+    try{const info=Parse.parseEjari(await docText(file));
+      if(!info.contractNo){rows.push({file,name:file.name,err:'Not an Ejari certificate'});continue}
+      if(seen.has(info.contractNo)){rows.push({file,name:file.name,info,dup:1});continue}seen.add(info.contractNo);
+      rows.push({file,name:file.name,info,t:matchTen(info),unit:unitKey(info)})}
+    catch(er){rows.push({file,name:file.name,err:er.message||'Could not read'})}}
+  window._ejb=rows;
+  const body=rows.map((r,k)=>{const i=r.info;
+    if(r.err)return `<tr><td class="xs">${esc(r.name)}</td><td colspan="4" class="muted">${esc(r.err)}</td></tr>`;
+    if(r.dup)return `<tr><td class="xs">${esc(r.name)}</td><td colspan="4" class="muted">Same contract as another file - skipped</td></tr>`;
+    const tn=r.t,warn=[];if(tn){const W=x=>String(x||'').toLowerCase().split(/[^a-z]+/).filter(w=>w.length>2),a=W(i.tenant),b2=W(tn.tenant)+' '+W((tn.aliases||[]).join(' '));r.nameBad=a.length&&!a.some(w=>b2.includes(w));if(r.nameBad)warn.push('tenant name is different');if(i.start&&tn.start!==i.start)warn.push('start '+fd(tn.start)+' vs '+fd(i.start));if(i.annual&&tn.units.length<2&&Math.round(tn.annual)!==Math.round(i.annual))warn.push('rent '+money(tn.annual,0)+' vs '+money(i.annual,0))}
+    return `<tr><td class="xs">${esc(r.name.replace(/^[0-9a-f]{8}-/,''))}</td><td>${esc(i.tenant||'')}<br><span class="muted xs">${fd(i.start)} - ${fd(i.end)} | ${money(i.annual||0,0)}</span></td><td><b>${esc(bshort(i.building)||'?')} ${esc(r.unit)}</b></td><td>${tn?`<span class="chip green">${esc(tn.tenant)}</span>${warn.length?`<br><span class="xs" style="color:#b4560a">Differs: ${esc(warn.join('; '))}</span>`:''}`:'<span class="chip amber">No tenancy found</span>'}</td><td>${tn?`<input type="checkbox" data-ejb="${k}" ${r.nameBad?'':'checked'}>`:''}</td></tr>`}).join('');
+  const ok=rows.filter(r=>r.t&&!r.nameBad).length;
+  modal({wide:1,title:'Link Ejari certificates',body:`<p class="muted">${ok} of ${fs.length} files matched a tenancy. Tick or untick before linking. Linking attaches the certificate and saves the Ejari details. Rent and dates in the panel are not changed.</p><div class="scroll"><table class="tbl sm"><thead><tr><th>File</th><th>Ejari says</th><th>Flat</th><th>Panel tenancy</th><th></th></tr></thead><tbody>${body}</tbody></table></div><div class="row end" style="margin-top:12px"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="ejbApply">Link selected</button></div>`})});
+actions.ejbApply=async()=>{const rows=window._ejb||[],pick=[...document.querySelectorAll('[data-ejb]')].filter(x=>x.checked).map(x=>rows[+x.dataset.ejb]);let ok=0,fail=0;
+  const b=document.querySelector('[data-act=ejbApply]');if(b){b.disabled=true;b.textContent='Linking...'}
+  for(const r of pick){const t=r.t,i=r.info;
+    const clean=Object.fromEntries(Object.entries(i).filter(([k,v])=>v!=null&&!['ok','building','missing'].includes(k)));
+    t.ejariAll=(t.ejariAll||[]).filter(x=>x.contractNo!==i.contractNo);t.ejariAll.push({unit:r.unit,contractNo:i.contractNo,start:i.start,end:i.end,premises:i.premises});
+    if(!t.ejari||t.ejari.contractNo===i.contractNo||t.units[0]===r.unit)t.ejari={...(t.ejari||{}),...clean};
+    t.eid=t.eid||i.eid;t.mobile=t.mobile||i.mobile;
+    try{const m=await storeFile(r.file,'Ejari '+r.unit);(t.files=t.files||[]).push(m);ok++}catch(e){fail++;console.error(e)}}
+  closeModal();save();toast(`${ok} Ejari certificate${ok===1?'':'s'} linked${fail?' ('+fail+' file upload failed)':''}`,fail?'err':'ok');refresh()};
 })();

@@ -31,7 +31,7 @@ function parseEjari(raw){
   if(m){o.propertyNo=m[1];o.propType=m[2];o.subType=m[3];o.usage=m[4];o.size=m[5];o.premises=m[6]}
   o.fees=num(g(/Total Fees ([\d,.]+) AED/));
   const b=(o.buildingName||'').toUpperCase();
-  o.building=/MURR|MURAQ|MARQ/.test(b)?'muraqabat':/BARAH|BARAHA/.test(b)?'baraha':null;
+  o.landArea=g(/Land Area (Al [A-Za-z]+)/);const bz=(b+' '+(o.landArea||'')).toUpperCase();o.building=/MURR|MURAQ|MARQ|MURAGG/.test(bz)?'muraqabat':/BARAH|LOOTAH/.test(bz)?'baraha':null;
   if(o.amount&&(!o.annual||o.annual<o.amount/3))o.annual=o.amount;
   o.missing=[['contract no.',o.contractNo],['start date',o.start],['end date',o.end],['tenant',o.tenant]].filter(x=>!x[1]).map(x=>x[0]);
   o.ok=!o.missing.length;
