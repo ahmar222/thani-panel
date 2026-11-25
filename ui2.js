@@ -159,7 +159,7 @@ PAGES.dashboard=()=>{
   <div class="bento">
    <div class="tile hero s7"><span class="glow"></span>
      <div class="hhead">${i3('wallet','hero-i')}<div><div class="cap">Owed to partners today</div><div class="big-n"><small>AED</small>${cn(C.owedTotal)}</div></div></div>
-     <div class="spkwrap">${spark(ser12.map(s=>s.cash),'#6ee7c8',{tips:ser12.map(s=>`${ml(s.m)} ${s.m.slice(0,4)}: AED ${money(s.cash,0)}`),xl:ser12.map(s=>ml(s.m))})}</div>
+     <div class="spkwrap">${spark(ser12.map(s=>s.cash),'#a2d2ff',{tips:ser12.map(s=>`${ml(s.m)} ${s.m.slice(0,4)}: AED ${money(s.cash,0)}`),xl:ser12.map(s=>ml(s.m))})}</div>
      <div class="row hbtns"><button class="btn primary" data-act="distribute">Distribute to partners</button><a class="btn ghost-h" href="#/partners">See shares</a><a class="btn ghost-h" href="#/bank">Bank check</a></div>
      <div class="recon"><div><span>Bank balance</span><b>${aed(C.cash)}</b>${v?(vok?'<em class="ok2">✓ matches statement</em>':'<em class="bad2">⚠ differs from statement</em>'):''}</div><div><span>Reserve kept</span><b>${aed(S.reserve)}</b></div></div></div>
    <div class="tile s5">${bdg('calendar','blue')}<h3>Rent this month</h3><div class="row" style="gap:20px;flex-wrap:nowrap;margin-top:6px">${ring(mr.due?mr.got/mr.due:0,mr.due&&mr.got>=mr.due?COL.occ:COL.in,{size:150,sub:'collected'})}<div><div class="mid-n"><small>AED</small>${cn(mr.got)}</div><div class="cap">of ${aed(mr.due)} due in ${MONN[+TODAY.slice(5,7)-1]}</div>${odAmt?`<a class="chip red" href="#/overdue" style="margin-top:10px">Overdue · ${aed(odAmt)} ›</a>`:'<span class="chip green" style="margin-top:10px">Nothing overdue</span>'}</div></div></div>

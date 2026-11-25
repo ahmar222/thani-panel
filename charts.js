@@ -1,5 +1,5 @@
 /* ===== Thani Real Estate - tiny SVG chart kit, animations, mobile helpers ===== */
-const COL={in:'#2a78d6',out:'#eb6834',occ:'#008300',end:'#eda100',od:'#e34948',vac:'#a9a3b2',ink:'#2a1a26',mut:'#7a6a76',grid:'#ece5eb'};
+const COL={in:'#4a90d9',out:'#f06ca0',occ:'#008300',end:'#eda100',od:'#e34948',vac:'#a9a3b2',ink:'#2a1a26',mut:'#7a6a76',grid:'#ece5eb'};
 const kfmt=n=>Math.abs(n)>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,'')+'M':Math.abs(n)>=1e3?Math.round(n/1e3)+'k':String(Math.round(n));
 const mlab=m=>MON[+m.slice(5,7)-1];
 
