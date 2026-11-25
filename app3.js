@@ -187,7 +187,7 @@ PAGES.tenant=id=>{
 };
 
 /* ---------- quick add ---------- */
-actions.quickAdd=()=>modal({small:1,title:'Add something',body:`<div class="qa"><button data-act="qaReceipt"><span class="em">💰</span>Receipt</button><button data-act="qaExpense"><span class="em">🧾</span>Expense</button><button data-act="qaTenant"><span class="em">🔑</span>New tenant</button><button data-act="qaMove"><span class="em">📦</span>Moved out</button></div>`});
+actions.quickAdd=()=>modal({small:1,title:'Add something',body:`<div class="qa"><label class="qbtn"><span class="em">📸</span>Upload receipt<input type="file" multiple accept="application/pdf,image/*" hidden data-act-change="dashIngest"></label><button data-act="qaReceipt"><span class="em">💰</span>Receipt by hand</button><button data-act="qaExpense"><span class="em">🧾</span>Expense</button><button data-act="qaTenant"><span class="em">🔑</span>New tenant</button><button data-act="qaMove"><span class="em">📦</span>Moved out</button></div>`});
 actions.qaReceipt=()=>{closeModal();openPay({})};actions.qaExpense=()=>{closeModal();actions.addExpense({})};actions.qaTenant=()=>{closeModal();actions.newTenant({})};
 actions.qaMove=()=>{
   const L=D.tenancies.filter(t=>t.status==='active').sort((a,b)=>(a.building||'').localeCompare(b.building||'')||(a.units[0]||'').localeCompare(b.units[0]||'',undefined,{numeric:true}));

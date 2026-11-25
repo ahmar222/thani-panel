@@ -121,3 +121,43 @@ PAGES.settings=()=>{const h=_ps(),B=landlordBank(),k=h.indexOf('<section class="
   return k<0?h+card:h.slice(0,k)+card+h.slice(k)};
 forms.landlordBank=f=>{D.settings.landlordBank={bankName:f.get('bankName').trim(),accName:f.get('accName').trim(),accNo:f.get('accNo').replace(/\s+/g,''),iban:f.get('iban').replace(/\s+/g,'').toUpperCase()};save();toast('Bank details saved','ok')};
 })();
+(function(){
+/* ---------- upload from the home page ---------- */
+document.addEventListener('change',async e=>{const t=e.target;if(t.dataset&&t.dataset.actChange==='dashIngest'&&t.files.length){const fs=[...t.files];t.value='';if(window.closeModal)try{closeModal()}catch(_){}
+  const before=D.entries.length;toast('Reading '+fs.length+' file'+(fs.length>1?'s':'')+'…','');await ingestFiles(fs);if(D.entries.length>before)location.hash='#/receipts'}});
+
+/* ---------- Partners: how the money is split ---------- */
+const mgr=()=>D.partners.find(p=>p.manager);
+PAGES.partners=()=>{
+  const C=CC,S=D.settings,pays=D.entries.filter(e=>e.kind==='payout'&&e.status!=='pending'&&!e.prior).sort((a,b)=>a.date<b.date?1:-1),m=mgr();
+  const bal=r2(C.pool-C.mg),entl=r2(C.partners.reduce((s,x)=>s+x.entl,0)),paid=r2(C.partners.reduce((s,x)=>s+x.paid,0)),diff=r2(C.cash-S.reserve-C.owedTotal);
+  const sh=C.partners.slice().sort((a,b)=>b.share-a.share).map(x=>({label:x.p.short,v:+(x.share*100).toFixed(2),tip:`${x.p.name}\n${x.area.toFixed(2)} m²`}));
+  const W=(l,s,v,k)=>`<div class="wfr ${k||''}"><div><b>${l}</b>${s?`<span>${s}</span>`:''}</div><em>${k==='minus'?'−':k==='plus'?'+':''} AED ${money(Math.abs(v),2)}</em></div>`;
+  return `<div class="ph"><div><h2>Partners</h2><div class="sub">Who is owed what, live</div></div><div class="row"><button class="btn primary" data-act="distribute">Distribute / pay</button><button class="btn" data-act="copyShares">Copy summary</button></div></div>
+  <div class="bento">
+   <div class="tile s7"><h3>How the money is split</h3><div class="cap">Step by step, from the total down to what each partner receives</div>
+    <div class="wf">
+     ${W('Total money to split','everything received minus expenses'+(S.holdDeposits?', tenant deposits held aside':''),C.pool)}
+     ${W(`Management fee ${S.mgmtPct}%`,`goes to ${esc(m?.short||'the manager')}`,C.mg,'minus')}
+     ${W('Balance','',bal,'sub')}
+     ${W('Kept for maintenance','stays in the account',S.reserve,'minus')}
+     ${W('To share between partners','split by area (m²)',C.dist,'tot')}
+    </div>
+    <div class="wf two"><div class="cap" style="margin:0 0 4px">Then, what is due today</div>
+     ${W('Partners\' area shares','',r2(C.dist),'')}${W(`Management fee to ${esc(m?.short||'manager')}`,'',C.mg,'plus')}${W('Total entitled','',entl,'sub')}${W('Already paid out','',paid,'minus')}${W('Due now','',C.owedTotal,'tot hero2')}
+    </div>
+    <p class="muted xs" style="margin-top:12px">Check: bank ${aed(C.cash)} − ${aed(S.reserve)} kept = ${aed(r2(C.cash-S.reserve))} ${Math.abs(diff)<0.02?'<span class="ok">✓ equals the amount due</span>':`(differs from amount due by ${aed(diff)}: pending receipts or unrecorded movements)`}</p></div>
+   <div class="tile s5"><h3>Ownership share</h3>${hbars(sh,{color:COL.in,fmt:v=>v.toFixed(2)+'%'})}</div>
+   <div class="tile s12"><h3>Due now, per partner</h3><div class="pcards">
+    ${C.partners.map(x=>`<button class="pcard ${x.owed<0?'neg':''}" data-act="pStmt" data-id="${x.p.id}"><b>${esc(x.p.short)}${x.p.manager?' <span class="pill amber">manager</span>':''}</b><span class="muted">${(x.share*100).toFixed(2)}% · paid AED ${money(x.paid,0)}</span>${x.fee?`<span class="xs muted">share ${money(x.share_amt,0)} + fee ${money(x.fee,0)}</span>`:''}<strong>AED ${money(x.owed)}</strong></button>`).join('')}</div></div>
+  </div>
+  ${!S.holdDeposits&&C.depHeld>0?`<div class="note amber">The total includes <b>${aed(C.depHeld)}</b> of tenant security deposits (as in your old sheet). To keep deposits aside until tenants move out, turn it on in <a href="#/settings">Settings</a>.</div>`:''}
+  <section class="card"><div class="tscroll"><table class="tbl"><thead><tr><th>Partner</th><th class="num">Area m²</th><th class="num">Share</th><th class="num">Area share</th><th class="num">Mgmt fee</th><th class="num">Entitled</th><th class="num">Paid</th><th class="num">Due now</th></tr></thead><tbody>
+  ${C.partners.map(x=>`<tr class="click" data-act="pStmt" data-id="${x.p.id}"><td><b>${esc(x.p.short)}</b><div class="muted xs">${esc(x.p.name)}<br>${esc(x.p.bank||'')} ${esc(x.p.iban||'')}</div></td><td class="num">${x.area.toFixed(2)}</td><td class="num">${(x.share*100).toFixed(2)}%</td><td class="num">${money(x.share_amt)}</td><td class="num">${x.fee?money(x.fee):'—'}</td><td class="num">${money(x.entl)}</td><td class="num">${money(x.paid)}</td><td class="num big ${x.owed<0?'bad':''}">${money(x.owed)}</td></tr>`).join('')}
+  <tr class="tot"><td>Total</td><td class="num">${C.totArea.toFixed(2)}</td><td class="num">100%</td><td class="num">${money(C.dist)}</td><td class="num">${money(C.mg)}</td><td class="num">${money(entl)}</td><td class="num">${money(paid)}</td><td class="num big">${money(C.owedTotal)}</td></tr></tbody></table></div>
+  <p class="muted xs">Receipts waiting to be assigned (${aed(C.pendingAmt)}) are not counted until assigned.</p></section>
+  <section class="card"><h3>Payout history</h3>${pays.length?`<div class="tscroll"><table class="tbl"><thead><tr><th>Date</th><th>Partner</th><th>Mode</th><th>Ref</th><th class="num">Amount</th></tr></thead><tbody>${pays.map(e=>`<tr><td class="nw">${fdt(e.date)}</td><td>${esc(partnerById(e.partnerId)?.short||'?')}</td><td class="xs">${esc(e.mode||'')}</td><td class="xs">${esc(e.ref||'')}</td><td class="num">${money(e.amount)}</td></tr>`).join('')}</tbody></table></div>`:empty('inbox','No payouts recorded yet')}</section>`};
+})();
+/* label table cells so they can stack as cards on phones */
+(function(){let q=0;const lab=()=>{q=0;document.querySelectorAll('.tcard table').forEach(t=>{const h=[...t.querySelectorAll('thead th')].map(x=>x.textContent.trim());t.querySelectorAll('tbody tr').forEach(r=>{[...r.children].forEach((c,i)=>{if(c.tagName!=='TD')return;if(h[i]&&!c.dataset.l)c.dataset.l=h[i];if(!c.textContent.trim()&&!c.querySelector('button,input,a,svg'))c.dataset.e=1})})})};
+ new MutationObserver(()=>{if(!q)q=requestAnimationFrame(lab)}).observe(document.getElementById('main'),{childList:true,subtree:true})})();

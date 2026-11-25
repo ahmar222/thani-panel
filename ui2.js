@@ -138,7 +138,7 @@ PAGES.dashboard=()=>{
   const pb=C.partners.slice().sort((a,b)=>b.owed-a.owed).map(x=>({label:x.p.short,v:x.owed,tip:`${x.p.name}\nShare ${(x.share*100).toFixed(2)}%`}));
   const arrAmt=r2(C.arrears.reduce((s,i)=>s+i.bal,0)),rs=rangeSeries();
   const segs=SK.map(([k,l,c])=>({key:k,label:l,v:cnt[k],color:COL[{occupied:'occ',ending:'end',overdue:'od',vacant:'vac'}[k]]}));
-  return `<div class="ph"><div><h2>Hello, Mr Thani</h2><div class="sub">${todayLong()}</div></div><div class="row"><button class="btn primary" data-act="addReceipt">+ Receipt</button><button class="btn" data-act="addExpense">+ Expense</button></div></div>
+  return `<div class="ph"><div><h2>Hello, Mr Thani</h2><div class="sub">${todayLong()}</div></div><div class="row"><label class="btn primary upl">${svgi('upload',18,2)} Upload receipt<input type="file" multiple accept="application/pdf,image/*" hidden data-act-change="dashIngest"></label><button class="btn" data-act="addReceipt">+ Receipt</button><button class="btn" data-act="addExpense">+ Expense</button></div></div>
   ${strip(C)}${stale?`<div class="note amber">Latest entry in the books is <b>${fd(C.lastEntry)}</b> – ${daysBetween(C.lastEntry,TODAY)} days ago. Add newer receipts so overdue and shares are accurate.</div>`:''}
   <div class="bento">
    <div class="tile hero s7"><span class="glow"></span>

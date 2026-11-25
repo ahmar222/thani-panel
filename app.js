@@ -266,7 +266,7 @@ function openPay(pre){
    <div class="fg"><label>Date received<input type="date" name="date" required value="${pre.date||TODAY}"></label>
    <label>Total amount received (AED)<input type="number" step="0.01" name="amt" required value="${pre.amount??''}"></label>
    <label>Mode<select name="mode">${opt(MODES,pre.mode||'bank transfer')}</select></label>
-   <label>Paid by (name on receipt)<input name="payer" value="${esc(pre.payer||'')}"></label>
+   <input type="hidden" name="payer" value="${esc(pre.payer||'')}">
    <label>Reference no.<input name="ref" value="${esc(pre.ref||'')}"></label>
    <label>Receipt / cheque photo<input type="file" name="file" accept="image/*,application/pdf"></label></div>
    <div id="sugg"></div>
