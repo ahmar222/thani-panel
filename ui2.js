@@ -168,10 +168,8 @@ PAGES.dashboard=()=>{
    <div class="tile s5"><div class="row between"><h3>Flats</h3><a class="sa2" href="#/flats">Open map ›</a></div><div class="donutwrap">${donut(segs,{size:150,thick:20,center:`${letN}/${states.length}`,sub:'let',active:f.unit})}
      <div class="frows">${SK.map(([k,l,c])=>`<button class="frow ${f.unit===k?'on':''}" data-act="flatFilter" data-s="${k}"><i style="background:${c}"></i><span>${l}</span><b>${cnt[k]}</b></button>`).join('')}</div></div></div>
 
-   <a class="tile s3 half stat" href="#/overdue">${bdg('clock','red')}<div class="cap">Overdue cheques</div><div class="mid-n"><small>AED</small>${cn(odAmt)}</div><div class="cap">${C.overdue.length} cheque${C.overdue.length===1?'':'s'}</div></a>
-   <a class="tile s3 half stat" href="#/receipts">${bdg('file','amber')}<div class="cap">Receipts to assign</div><div class="mid-n"><small>AED</small>${cn(C.pendingAmt)}</div><div class="cap">${C.pending.length} receipt${C.pending.length===1?'':'s'}</div></a>
-   <a class="tile s3 half stat" href="#/partners">${bdg('wallet','blue')}<div class="cap">Deposits held</div><div class="mid-n"><small>AED</small>${cn(C.depHeld)}</div><div class="cap">${S.holdDeposits?'kept out of shares':'counted in shares'}</div></a>
-   <a class="tile s3 half stat" href="#/cheques">${bdg('cash','green')}<div class="cap">Cheques in hand</div><div class="mid-n"><small>AED</small>${cn(C.chqHeld)}</div><div class="cap">${C.chqHeldN} cheque${C.chqHeldN===1?'':'s'} to come</div></a>
+   <a class="tile s6 stat" href="#/overdue">${bdg('clock','red')}<div class="cap">Overdue cheques</div><div class="mid-n"><small>AED</small>${cn(odAmt)}</div><div class="cap">${C.overdue.length} cheque${C.overdue.length===1?'':'s'}</div></a>
+   <a class="tile s6 stat" href="#/cheques">${bdg('cash','green')}<div class="cap">Cheques in hand</div><div class="mid-n"><small>AED</small>${cn(C.chqHeld)}</div><div class="cap">${C.chqHeldN} cheque${C.chqHeldN===1?'':'s'} to come</div></a>
 
    <div class="tile s7 noprint">${bdg('bell','red')}<h3>Needs attention</h3>${attention(A)}</div>
    <div class="tile s5"><div class="row between"><h3>Each partner is owed</h3><a class="sa2" href="#/partners">Details ›</a></div>${pbars(C)}</div>
