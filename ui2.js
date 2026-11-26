@@ -159,7 +159,7 @@ PAGES.dashboard=()=>{
   <div class="bento">
    <div class="tile hero s7"><span class="glow"></span>
      <div class="hhead">${i3('wallet','hero-i')}<div><div class="cap">Owed to partners today</div><div class="big-n"><small>AED</small>${cn(C.owedTotal)}</div></div></div>
-     <div class="spkwrap">${spark(ser12.map(s=>s.cash),'#3d3066',{tips:ser12.map(s=>`${ml(s.m)} ${s.m.slice(0,4)}: AED ${money(s.cash,0)}`),xl:ser12.map(s=>ml(s.m))})}</div>
+     ${heroTrend(ser12)}
      <div class="recon"><div><span>Bank balance</span><b>${aed(C.cash)}</b>${v?(vok?'<em class="ok2">✓ matches statement</em>':'<em class="bad2">⚠ differs from statement</em>'):''}</div><div><span>Reserve kept</span><b>${aed(S.reserve)}</b></div></div>
      <div class="row hbtns"><button class="btn primary" data-act="distribute">Distribute to partners</button><a class="btn ghost-h" href="#/partners">See shares</a><button class="btn ghost-h" data-act="closeYear">Close the year</button></div>${S.yearStart?`<div class="cap" style="margin-top:8px">Books year started ${fd(S.yearStart)} · <a href="#" data-act="pastYears" style="color:inherit;text-decoration:underline">Past years</a></div>`:(D.closedYears&&D.closedYears.length?'':'')}</div>
    <div class="tile s5 rf"><div class="rf-sec">${bdg('calendar','blue')}<h3>Rent this month</h3><div class="row" style="gap:20px;flex-wrap:nowrap;margin-top:6px">${ring(mr.due?mr.got/mr.due:0,mr.due&&mr.got>=mr.due?COL.occ:COL.in,{size:120,sub:'collected'})}<div><div class="mid-n"><small>AED</small>${cn(mr.got)}</div><div class="cap">of ${aed(mr.due)} due in ${MONN[+TODAY.slice(5,7)-1]}</div>${odAmt?`<a class="chip red" href="#/overdue" style="margin-top:10px">Overdue · ${aed(odAmt)} ›</a>`:'<span class="chip green" style="margin-top:10px">Nothing overdue</span>'}</div></div></div><div class="rf-sec"><div class="row between"><h3>Flats</h3><a class="sa2" href="#/flats">Open map ›</a></div><div class="donutwrap">${donut(segs,{size:120,thick:20,center:`${letN}/${states.length}`,sub:'let',active:f.unit})}
@@ -221,3 +221,21 @@ window._uiFlatsDrawer=drawer;
 /* rotating greeting */
 (function(){const G=['Hello','Marhaba','Hola'];let i=0;
 setInterval(()=>{const h=document.getElementById('greet');if(!h)return;i=(i+1)%G.length;h.style.opacity=0;setTimeout(()=>{const x=document.getElementById('greet');if(x){x.textContent=G[i];x.style.opacity=1}},350)},3500)})();
+
+/* hero trend: smooth area, no axes; hover a month for the figure */
+window.heroTrend=heroTrend;function heroTrend(ser){
+  const ml=m=>['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m.slice(5,7)-1];
+  const v=ser.map(x=>x.cash),n=v.length;if(n<2)return '';
+  const mn=Math.min(...v),mx=Math.max(...v),rg=(mx-mn)||1,W=600,H=110,pt=10,pb=6;
+  const X=k=>k*W/(n-1),Y=x=>pt+(H-pt-pb)*(1-(x-mn)/rg);
+  let d='M'+X(0)+' '+Y(v[0]);
+  for(let k=1;k<n;k++){const cx=(X(k-1)+X(k))/2;d+=` C${cx} ${Y(v[k-1])} ${cx} ${Y(v[k])} ${X(k)} ${Y(v[k])}`}
+  const last=v[n-1],top=(Y(last)/H*100).toFixed(1);
+  const hi=v.indexOf(mx),lo=v.indexOf(mn);
+  return `<div class="htr"><div class="htr-h"><span>Bank balance over the last 12 months</span></div>
+  <div class="htr-c"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><linearGradient id="htg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d3066" stop-opacity=".28"/><stop offset="1" stop-color="#3d3066" stop-opacity="0"/></linearGradient></defs>
+  <path d="${d} L${W} ${H} L0 ${H} Z" fill="url(#htg)"/><path d="${d}" fill="none" stroke="#3d3066" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+  <i class="htr-dot" style="top:${top}%"></i>
+  <div class="htr-hit">${ser.map(x=>`<span data-tip="${ml(x.m)} ${x.m.slice(0,4)}: AED ${money(x.cash,0)}"></span>`).join('')}</div></div>
+  <div class="htr-f"><span>${ml(ser[0].m)} ${ser[0].m.slice(0,4)}</span><span>Low ${kfmt(mn)} · High ${kfmt(mx)}</span><span>${ml(ser[n-1].m)} ${ser[n-1].m.slice(0,4)}</span></div></div>`;
+}
